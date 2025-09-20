@@ -31,9 +31,11 @@ export function useRealTimeMetrics(options?: UseRealTimeMetricsOptions): {
   stepSeconds: number;
   controls: MetricsControls;
 } {
-  const services = (options?.services ?? [
-    ...DEFAULT_SERVICES,
-  ]) as ServiceName[];
+  const services = useMemo<ServiceName[]>(
+    () => options?.services ?? [...DEFAULT_SERVICES],
+    [options?.services]
+  );
+
   const [windowMinutes, setWindowMinutes] = useState<number>(
     options?.windowMinutes ?? OBS_DEFAULT_WINDOW_MINUTES
   );

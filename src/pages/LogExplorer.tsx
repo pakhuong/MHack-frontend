@@ -93,7 +93,7 @@ function download(filename: string, content: string, mime = 'text/plain') {
 export default function LogExplorer() {
   const { controls, filterLogs, latestTimestamp } = useRealTimeLogs({
     initialBurst: 120,
-    intervalMs: 1000,
+    intervalMs: 2000,
   });
 
   const [services, setServices] = useState<ServiceName[]>();

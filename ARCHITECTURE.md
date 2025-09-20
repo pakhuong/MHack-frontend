@@ -28,7 +28,6 @@ It will be updated as work progresses, with status checkboxes for each step.
 - ECharts + echarts-for-react: powerful charting; supports large datasets and real-time updates.
 - dayjs: lightweight date/time handling.
 - uuid: unique IDs for mock entries.
-- react-json-view: collapsible view for JSON log context.
 - Tailwind + AntD: present; use AntD for heavy UI, Tailwind for utility spacing when handy.
 
 ## 3. High-level Architecture
@@ -163,7 +162,7 @@ export interface HealthMetricsSeries {
 
 ---
 
-# Implementation Plan and Progress
+## Implementation Plan and Progress
 
 This checklist is updated as work proceeds.
 
