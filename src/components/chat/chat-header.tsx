@@ -6,7 +6,10 @@ interface ChatHeaderProps {
   onModelChange: (model: string) => void;
 }
 
-export const ChatHeader = ({ currentModel, onModelChange }: ChatHeaderProps) => {
+export const ChatHeader = ({
+  currentModel,
+  onModelChange,
+}: ChatHeaderProps) => {
   return (
     <div className="flex items-center justify-between px-4 py-2 border-b border-gray-200 bg-white">
       <div className="flex items-center gap-4">
@@ -20,7 +23,7 @@ export const ChatHeader = ({ currentModel, onModelChange }: ChatHeaderProps) => 
           ]}
         />
       </div>
-      
+
       <div className="flex items-center gap-2">
         <Tooltip title="Share chat">
           <Button

@@ -11,6 +11,8 @@ import {
   Settings2,
   Ticket,
   Trash2,
+  Logs,
+  SquareActivity,
 } from 'lucide-react';
 
 import { NavFavorites } from '@/components/nav-favorites';
@@ -55,6 +57,16 @@ const data = {
       url: '/chat',
       icon: BotMessageSquare,
       isActive: true,
+    },
+    {
+      title: 'Logs',
+      url: '/logs',
+      icon: Logs,
+    },
+    {
+      title: 'Health',
+      url: '/health',
+      icon: SquareActivity,
     },
     {
       title: 'Home',
