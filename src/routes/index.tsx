@@ -1,14 +1,24 @@
 import { createBrowserRouter } from 'react-router-dom';
-import Home from '../pages/Home';
-import About from '../pages/About';
+import TicketPage from '../pages/Tickets';
+import ChatPage from '../pages/Chat';
+import { MainLayoutWrapper } from '../components/layout';
+import { ChatFavorites } from '@/components/chat/chat-favorites';
 
 export const router = createBrowserRouter([
   {
-    path: '/',
-    element: <Home />,
+    path: '/ticket',
+    element: (
+      <MainLayoutWrapper sideBarContent={<></>} pageTitle="Tickets">
+        <TicketPage />
+      </MainLayoutWrapper>
+    ),
   },
   {
-    path: '/about',
-    element: <About />,
+    path: '/chat',
+    element: (
+      <MainLayoutWrapper sideBarContent={<ChatFavorites />} pageTitle="Chat">
+        <ChatPage />
+      </MainLayoutWrapper>
+    ),
   },
 ]);
