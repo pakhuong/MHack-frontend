@@ -29,14 +29,14 @@ export const router = createBrowserRouter([
       <MainLayoutWrapper sideBarContent={<></>} pageTitle="Log Explorer">
         <LogExplorer />
       </MainLayoutWrapper>
-    )
+    ),
   },
   {
     path: '/health',
     element: (
       <MainLayoutWrapper sideBarContent={<></>} pageTitle="Health Dashboard">
-        <HealthDasboard />
+        <HealthDashboard />
       </MainLayoutWrapper>
-    )
-  }
+    ),
+  },
 ]);
