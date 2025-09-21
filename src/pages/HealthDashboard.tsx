@@ -625,7 +625,10 @@ export default function HealthDashboard() {
             </Space>
           </Card>
 
-          <Row gutter={[16, 16]}>
+          <Row
+            gutter={[16, 16]}
+            style={{ justifyContent: 'stretch', alignItems: 'stretch' }}
+          >
             {visibleServices.map((s) => {
               const last = lastByService[s];
               const status =
@@ -659,6 +662,9 @@ export default function HealthDashboard() {
                           title="RT"
                           value={last?.responseTime ?? 0}
                           suffix="ms"
+                          style={{
+                            wordBreak: 'break-word',
+                          }}
                         />
                         <Statistic
                           title="Error"
