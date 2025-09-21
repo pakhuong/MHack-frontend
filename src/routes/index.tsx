@@ -6,6 +6,7 @@ import HealthDashboard from '../pages/HealthDashboard';
 import { MainLayoutWrapper } from '../components/layout';
 import { ChatFavorites } from '@/components/chat/chat-favorites';
 import TicketDetail from '@/pages/TicketDetail';
+import Login from '@/pages/Login';
 
 export const router = createBrowserRouter([
   {
@@ -15,6 +16,10 @@ export const router = createBrowserRouter([
         <ChatPage />
       </MainLayoutWrapper>
     ),
+  },
+  {
+    path: '/login',
+    element: <Login />,
   },
   {
     path: '/ticket',
