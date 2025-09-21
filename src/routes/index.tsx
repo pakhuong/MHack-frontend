@@ -5,6 +5,7 @@ import LogExplorer from '../pages/LogExplorer';
 import HealthDashboard from '../pages/HealthDashboard';
 import { MainLayoutWrapper } from '../components/layout';
 import { ChatFavorites } from '@/components/chat/chat-favorites';
+import TicketDetail from '@/pages/TicketDetail';
 
 export const router = createBrowserRouter([
   {
@@ -12,6 +13,14 @@ export const router = createBrowserRouter([
     element: (
       <MainLayoutWrapper sideBarContent={<></>} pageTitle="Tickets">
         <TicketPage />
+      </MainLayoutWrapper>
+    ),
+  },
+  {
+    path: '/ticket/:id',
+    element: (
+      <MainLayoutWrapper sideBarContent={<></>} pageTitle="Ticket Detail">
+        <TicketDetail />
       </MainLayoutWrapper>
     ),
   },

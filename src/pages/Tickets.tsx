@@ -2,7 +2,6 @@ import { useState, type ReactNode } from 'react';
 import { ProTable } from '@ant-design/pro-components';
 import type { ProColumns } from '@ant-design/pro-components';
 import { Button, Tag, Input, Select, Empty } from 'antd';
-import { PlusOutlined } from '@ant-design/icons';
 import type { Ticket } from '../types/ticket';
 import {
   ticketStatusColors,
@@ -10,6 +9,7 @@ import {
   incidentTypeColors,
 } from '../types/ticket';
 import { Plus } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
 
 const { Search } = Input;
 
@@ -20,7 +20,7 @@ const mockData: Ticket[] = [
     summary: 'Lượng request tăng, nhiều queue BE đang bị nghẽn',
     status: 'CLOSED',
     severity: 'S3',
-    incidentType: 'ĐANG XẢY RA',
+    incidentType: 'HAPPENING',
     created: '2025-09-19 17:59:02',
     updated: '2025-09-19 18:15:23',
   },
@@ -29,7 +29,7 @@ const mockData: Ticket[] = [
     summary: 'Lượng request tăng, nhiều queue BE đang bị nghẽn',
     status: 'CLOSED',
     severity: 'S3',
-    incidentType: 'ĐANG XẢY RA',
+    incidentType: 'HAPPENING',
     created: '2025-09-19 17:57:13',
     updated: '2025-09-19 17:58:45',
   },
@@ -38,7 +38,7 @@ const mockData: Ticket[] = [
     summary: 'Giao dịch chậm ảnh hưởng hệ thống',
     status: 'RECOVERED',
     severity: 'S3',
-    incidentType: 'ĐANG XẢY RA',
+    incidentType: 'HAPPENING',
     created: '2025-09-12 12:16:23',
     updated: '2025-09-12 17:45:12',
   },
@@ -47,7 +47,7 @@ const mockData: Ticket[] = [
     summary: 'Giao dịch chậm, ảnh hưởng toàn hệ thống',
     status: 'RECOVERED',
     severity: 'S1',
-    incidentType: 'ĐANG XẢY RA',
+    incidentType: 'HAPPENING',
     created: '2025-09-10 20:58:42',
     updated: '2025-09-10 23:15:00',
   },
@@ -56,7 +56,7 @@ const mockData: Ticket[] = [
     summary: 'Dừng giao dịch để xử lý chậm giao dịch',
     status: 'CLOSED',
     severity: 'S1',
-    incidentType: 'ĐANG XẢY RA',
+    incidentType: 'HAPPENING',
     created: '2025-09-10 20:30:53',
     updated: '2025-09-10 20:45:12',
   },
@@ -64,7 +64,7 @@ const mockData: Ticket[] = [
 
 const TicketPage = () => {
   const [selectedRowKeys, setSelectedRowKeys] = useState<string[]>([]);
-
+  const navigate = useNavigate();
   const columns: ProColumns<Ticket>[] = [
     {
       title: 'ID',
@@ -72,7 +72,7 @@ const TicketPage = () => {
       key: 'id',
       width: 100,
       render: (dom: ReactNode, record: Ticket) => (
-        <span className="text-purple-600 font-medium">{record.id}</span>
+        <span className="text-blue-600 font-medium">{record.id}</span>
       ),
     },
     {
@@ -88,7 +88,8 @@ const TicketPage = () => {
       width: 120,
       render: (dom: ReactNode, record: Ticket) => (
         <Tag
-          className={`${ticketStatusColors[record.status]} px-3 py-1 rounded-full`}
+          className={`text-white px-3 py-1 rounded-full`}
+          color={ticketStatusColors[record.status]}
         >
           {record.status}
         </Tag>
@@ -107,7 +108,8 @@ const TicketPage = () => {
       width: 120,
       render: (dom: ReactNode, record: Ticket) => (
         <Tag
-          className={`${severityColors[record.severity]} px-3 py-1 rounded-full`}
+          className={`text-white px-3 py-1 rounded-full`}
+          color={severityColors[record.severity]}
         >
           {record.severity}
         </Tag>
@@ -125,14 +127,15 @@ const TicketPage = () => {
       width: 150,
       render: (dom: ReactNode, record: Ticket) => (
         <Tag
-          className={`${incidentTypeColors[record.incidentType]} px-3 py-1 rounded-full`}
+          className={`text-white px-3 py-1 rounded-full`}
+          color={incidentTypeColors[record.incidentType]}
         >
           {record.incidentType}
         </Tag>
       ),
       filters: [
-        { text: 'ĐANG XẢY RA', value: 'ĐANG XẢY RA' },
-        { text: 'ĐÃ GIẢI QUYẾT', value: 'ĐÃ GIẢI QUYẾT' },
+        { text: 'HAPPENING', value: 'HAPPENING' },
+        { text: 'RESOLVED', value: 'RESOLVED' },
       ],
     },
     {
@@ -191,8 +194,8 @@ const TicketPage = () => {
       showSearch
       optionFilterProp="children"
     >
-      <Select.Option value="ĐANG XẢY RA">ĐANG XẢY RA</Select.Option>
-      <Select.Option value="ĐÃ GIẢI QUYẾT">ĐÃ GIẢI QUYẾT</Select.Option>
+      <Select.Option value="HAPPENING">HAPPENING</Select.Option>
+      <Select.Option value="RESOLVED">RESOLVED</Select.Option>
     </Select>,
     <Button key="create" type="primary" icon={<Plus color="black" />}>
       <span className="text-black">Create Ticket</span>
@@ -214,9 +217,9 @@ const TicketPage = () => {
   );
 
   return (
-    <div className="p-6">
+    <div>
       <div className="mb-6">
-        <h1 className="text-2xl font-bold text-purple-600">
+        <h1 className="text-2xl font-bold text-white">
           Ticket Management System
         </h1>
         <p className="text-gray-600">
@@ -229,7 +232,7 @@ const TicketPage = () => {
         rowKey="id"
         search={false}
         dateFormatter="string"
-        headerTitle="INCIDENT TICKET (IS)"
+        // headerTitle="INCIDENT TICKET (IS)"
         toolBarRender={toolBarRender}
         locale={{
           emptyText: customEmpty(),
@@ -243,6 +246,15 @@ const TicketPage = () => {
             setSelectedRowKeys(selectedRowKeys as string[]);
           },
         }}
+        tooltip={{
+          title: 'INCIDENT TICKET (IS)',
+          placement: 'top',
+        }}
+        onRow={(record) => ({
+          onClick: () => {
+            navigate(`/ticket/${record.id}`);
+          },
+        })}
         pagination={{
           pageSize: 10,
           showQuickJumper: true,

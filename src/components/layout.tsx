@@ -51,7 +51,7 @@ export const MainLayoutWrapper = React.memo<MainLayoutWrapperProps>(
                   </Breadcrumb>
                 </div>
               </header>
-              <div className="flex flex-1 flex-col gap-4 px-4 py-10 bg-black">
+              <div className="flex flex-1 flex-col gap-4 px-4 py-4 bg-black">
                 {children}
               </div>
             </SidebarInset>
