@@ -596,7 +596,7 @@ export default function HealthDashboard() {
   return (
     <Row gutter={[24, 16]} style={{ height: '100%' }}>
       {/* Left Column - Health Dashboard */}
-      <Col xs={24} lg={16}>
+      <Col xs={24} lg={24}>
         <Space
           direction="vertical"
           size={16}
@@ -750,9 +750,9 @@ export default function HealthDashboard() {
       </Col>
 
       {/* Right Column - Status Dashboard */}
-      <Col xs={24} lg={8}>
+      {/* <Col xs={24} lg={8}>
         <StatusDashboard />
-      </Col>
+      </Col> */}
     </Row>
   );
 }

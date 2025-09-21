@@ -1,6 +1,6 @@
 import type { Message as MessageType } from '../../types/chat';
 import ReactMarkdown from 'react-markdown';
-import { Button, Tooltip, message } from 'antd';
+import { Button, Tooltip, Card, Tag } from 'antd';
 import {
   CopyOutlined,
   EditOutlined,
@@ -8,6 +8,8 @@ import {
   LikeOutlined,
   DislikeOutlined,
 } from '@ant-design/icons';
+import { useNavigate } from 'react-router-dom';
+import { AlertTriangle, Clock, User } from 'lucide-react';
 
 interface MessageProps {
   message: MessageType;
@@ -17,6 +19,7 @@ interface MessageProps {
 
 export const Message = ({ message, onEdit, onRegenerate }: MessageProps) => {
   const isUser = message.role === 'user';
+  const navigate = useNavigate();
 
   const handleCopy = async () => {
     try {
@@ -24,6 +27,36 @@ export const Message = ({ message, onEdit, onRegenerate }: MessageProps) => {
       message.success('Copied to clipboard');
     } catch (err) {
       message.error('Failed to copy');
+    }
+  };
+
+  const getSeverityColor = (severity: string) => {
+    switch (severity.toLowerCase()) {
+      case 'critical':
+        return '#ff4d4f';
+      case 'high':
+        return '#ff7a45';
+      case 'medium':
+        return '#ffa940';
+      case 'low':
+        return '#52c41a';
+      default:
+        return '#d9d9d9';
+    }
+  };
+
+  const getStatusColor = (status: string) => {
+    switch (status) {
+      case 'OPEN':
+        return '#ff4d4f';
+      case 'IN_PROGRESS':
+        return '#1890ff';
+      case 'RESOLVED':
+        return '#52c41a';
+      case 'CLOSED':
+        return '#d9d9d9';
+      default:
+        return '#faad14';
     }
   };
 
@@ -39,11 +72,79 @@ export const Message = ({ message, onEdit, onRegenerate }: MessageProps) => {
       <div
         className={`flex max-w-full ${
           isUser ? 'bg-zinc-900' : 'bg-black border border-zinc-800'
-        } py-4 px-6 rounded-lg`}
+        } py-4 px-6 rounded-lg flex-col space-y-4`}
       >
         <div className="prose prose-invert max-w-none font-base text-base">
           <ReactMarkdown>{message.content}</ReactMarkdown>
         </div>
+
+        {/* Incident Object */}
+        {message.incident && (
+          <Card
+            className="bg-zinc-800 border-zinc-700 hover:border-zinc-600 cursor-pointer transition-all"
+            onClick={() => navigate(`/ticket/${message.incident?.incident_id}`)}
+          >
+            <div className="flex items-start justify-between">
+              <div className="flex-1">
+                <div className="flex items-center space-x-2 mb-2">
+                  <AlertTriangle
+                    color={getSeverityColor(message.incident.severity)}
+                    size={16}
+                  />
+                  <span className="text-blue-400 font-mono text-sm">
+                    {message.incident.incident_id}
+                  </span>
+                  <Tag
+                    color={getSeverityColor(message.incident.severity)}
+                    className="text-xs"
+                  >
+                    {message.incident.severity.toUpperCase()}
+                  </Tag>
+                  <Tag
+                    color={getStatusColor(message.incident.status)}
+                    className="text-xs"
+                  >
+                    {message.incident.status}
+                  </Tag>
+                </div>
+
+                <h4 className="text-white font-medium mb-2 text-sm">
+                  {message.incident.summary}
+                </h4>
+
+                <div className="flex items-center space-x-4 text-xs text-gray-400 mb-2">
+                  <div className="flex items-center space-x-1">
+                    <User style={{ fontSize: 10 }} />
+                    <span>
+                      {message.incident.impact.users.toLocaleString()} users
+                    </span>
+                  </div>
+                  <div className="flex items-center space-x-1">
+                    <Clock style={{ fontSize: 10 }} />
+                    <span>
+                      {new Date(
+                        message.incident.start_time
+                      ).toLocaleDateString()}
+                    </span>
+                  </div>
+                </div>
+
+                <div className="flex items-center justify-between">
+                  <div className="text-xs text-gray-500">
+                    Service: {message.incident.service}
+                  </div>
+                  <Button
+                    type="link"
+                    size="small"
+                    className="text-blue-400 hover:text-blue-300 p-0 text-xs"
+                  >
+                    View Details →
+                  </Button>
+                </div>
+              </div>
+            </div>
+          </Card>
+        )}
       </div>
       <div
         className={`flex items-center gap-2 ${

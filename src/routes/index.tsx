@@ -6,6 +6,7 @@ import HealthDashboard from '../pages/HealthDashboard';
 import { MainLayoutWrapper } from '../components/layout';
 import { ChatFavorites } from '@/components/chat/chat-favorites';
 import TicketDetail from '@/pages/TicketDetail';
+import Login from '@/pages/Login';
 
 export const router = createBrowserRouter([
   {
@@ -17,17 +18,21 @@ export const router = createBrowserRouter([
     ),
   },
   {
-    path: '/ticket',
+    path: '/login',
+    element: <Login />,
+  },
+  {
+    path: '/alert-incident-management',
     element: (
-      <MainLayoutWrapper sideBarContent={<></>} pageTitle="Tickets">
+      <MainLayoutWrapper sideBarContent={<></>} pageTitle="Alert/Incident Management">
         <TicketPage />
       </MainLayoutWrapper>
     ),
   },
   {
-    path: '/ticket/:id',
+    path: '/alert-incident-management/:id',
     element: (
-      <MainLayoutWrapper sideBarContent={<></>} pageTitle="Ticket Detail">
+      <MainLayoutWrapper sideBarContent={<></>} pageTitle="Alert Incident Detail">
         <TicketDetail />
       </MainLayoutWrapper>
     ),
@@ -35,7 +40,7 @@ export const router = createBrowserRouter([
   {
     path: '/chat',
     element: (
-      <MainLayoutWrapper sideBarContent={<ChatFavorites />} pageTitle="Chat">
+      <MainLayoutWrapper sideBarContent={<></>} pageTitle="Chat">
         <ChatPage />
       </MainLayoutWrapper>
     ),

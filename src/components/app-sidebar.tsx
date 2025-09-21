@@ -13,9 +13,11 @@ import { TeamSwitcher } from '@/components/team-switcher';
 import {
   Sidebar,
   SidebarContent,
+  SidebarFooter,
   SidebarHeader,
   SidebarRail,
 } from '@/components/ui/sidebar';
+import { NavUser } from './nav-user';
 
 // Sample data
 const data = {
@@ -38,8 +40,8 @@ const data = {
   ],
   navMain: [
     {
-      title: 'Ticket',
-      url: '/ticket',
+      title: 'Alert/Incident management',
+      url: '/alert-incident-management',
       icon: Ticket,
     },
     {
@@ -59,6 +61,11 @@ const data = {
       icon: SquareActivity,
     },
   ],
+  user: {
+    name: 'John Doe',
+    email: 'john.doe@example.com',
+    avatar: 'https://github.com/shadcn.png',
+  },
 };
 
 interface AppSidebarProps extends React.ComponentProps<typeof Sidebar> {
@@ -87,6 +94,9 @@ export function AppSidebar({ sideBarContent, ...props }: AppSidebarProps) {
           </>
         )}
       </SidebarContent>
+      <SidebarFooter style={{ backgroundColor: '#121212' }}>
+        <NavUser user={data.user} />
+      </SidebarFooter>
       <SidebarRail className="bg-[#121212] border-r border-[#2A2A2A]" />
     </Sidebar>
   );

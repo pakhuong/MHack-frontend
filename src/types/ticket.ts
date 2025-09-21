@@ -9,7 +9,7 @@ export type TicketStatus =
   | 'NEED_TEST'
   | 'TESTING';
 
-export type TicketSeverity = 'S1' | 'S2' | 'S3';
+export type TicketSeverity = 'critical' | 'high' | 'medium';
 
 export type TicketPriority = 'LOW' | 'MEDIUM' | 'HIGH' | 'URGENT';
 
@@ -39,27 +39,33 @@ export interface Comment {
   updated?: string;
 }
 
-export interface Ticket {
-  id: string;
-  summary: string;
-  description?: string;
-  status: TicketStatus;
-  severity: TicketSeverity;
-  priority: TicketPriority;
-  incidentType: TicketType;
-  created: string;
-  updated: string;
-  assignee?: User;
-  reporter?: User;
-  labels?: string[];
-  attachments?: Attachment[];
-  comments?: Comment[];
-  development?: {
-    branches: number;
-    commits: number;
-    pullRequests: number;
-    lastCommit?: string;
+export interface AlerIncident {
+  incident_id: string;
+  service: string;
+  start_time: string;
+  severity: string;
+  impact: {
+    users: number;
+    region: string;
   };
+  anomalies: {
+    metric: string;
+    change: string;
+    value: string;
+  }[];
+  log_clusters: string[];
+  change_event: string;
+  cause: string;
+  timeline: {
+    time: string;
+    event: string;
+  }[];
+  suggested_solution: string;
+  preventive_plan: string;
+  status: string;
+  assignee: string;
+  reporter: string;
+  priority: string;
 }
 
 export const ticketStatusColors: Record<TicketStatus, string> = {
@@ -75,9 +81,9 @@ export const ticketStatusColors: Record<TicketStatus, string> = {
 };
 
 export const severityColors: Record<TicketSeverity, string> = {
-  S1: 'red',
-  S2: 'orange',
-  S3: 'pink',
+  critical: 'red',
+  high: 'orange',
+  medium: 'yellow',
 };
 
 export const priorityColors: Record<TicketPriority, string> = {

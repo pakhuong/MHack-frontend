@@ -3,183 +3,278 @@ import { ProTable } from '@ant-design/pro-components';
 import type { ProColumns } from '@ant-design/pro-components';
 import { Button, Tag, Input, Select, Empty, ConfigProvider } from 'antd';
 import enUS from 'antd/locale/en_US';
-import type { Ticket } from '../types/ticket';
-import {
-  ticketStatusColors,
-  severityColors,
-  incidentTypeColors,
-} from '../types/ticket';
+import type { AlerIncident, TicketSeverity } from '../types/ticket';
+import { severityColors } from '../types/ticket';
 import { Plus } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
-
+import dayjs from 'dayjs';
 const { Search } = Input;
 
 // Mock data
-const mockData: Ticket[] = [
+const mockData: AlerIncident[] = [
   {
-    id: 'IS-0296',
-    summary: 'Request volume increased, many BE queues are congested',
-    status: 'CLOSED',
-    severity: 'S3',
-    incidentType: 'HAPPENING',
-    created: '2025-09-19 17:59:02',
-    updated: '2025-09-19 18:15:23',
-    priority: 'HIGH',
+    incident_id: 'INC-20250918-01',
+    service: 'payment-service',
+    start_time: '2025-09-18T10:05:00Z',
+    severity: 'critical',
+    impact: {
+      users: 5000,
+      region: 'VN',
+    },
+    anomalies: [
+      {
+        metric: 'failure_rate',
+        change: '+12%',
+        value: '12.3%',
+      },
+      {
+        metric: 'rps',
+        change: '-3500',
+        value: '6000',
+      },
+    ],
+    log_clusters: ['DB_CONN_FAIL'],
+    change_event: 'deploy v1.2.0 at 10:03',
+    cause: 'DB connection pool misconfiguration after deploy',
+    timeline: [
+      {
+        time: '2025-09-18T10:03:00Z',
+        event: 'deploy v1.2.0',
+      },
+      {
+        time: '2025-09-18T10:05:00Z',
+        event: 'failure_rate_spike + DB_CONN_FAIL',
+      },
+      {
+        time: '2025-09-18T10:07:00Z',
+        event: 'incident escalated',
+      },
+    ],
+    suggested_solution: 'Revert deploy v1.2.0, increase DB pool size to 500',
+    preventive_plan: 'Run DB stress test in CI/CD before deploy',
+    status: '',
+    assignee: '',
+    reporter: '',
+    priority: '',
   },
   {
-    id: 'IS-0295',
-    summary: 'Request volume increased, many BE queues are congested',
-    status: 'CLOSED',
-    severity: 'S3',
-    incidentType: 'HAPPENING',
-    created: '2025-09-19 17:57:13',
-    updated: '2025-09-19 17:58:45',
-    priority: 'HIGH',
+    incident_id: 'INC-20250918-01',
+    service: 'payment-service',
+    start_time: '2025-09-18T10:05:00Z',
+    severity: 'critical',
+    impact: {
+      users: 5000,
+      region: 'VN',
+    },
+    anomalies: [
+      {
+        metric: 'failure_rate',
+        change: '+12%',
+        value: '12.3%',
+      },
+      {
+        metric: 'rps',
+        change: '-3500',
+        value: '6000',
+      },
+    ],
+    log_clusters: ['DB_CONN_FAIL'],
+    change_event: 'deploy v1.2.0 at 10:03',
+    cause: 'DB connection pool misconfiguration after deploy',
+    timeline: [
+      {
+        time: '2025-09-18T10:03:00Z',
+        event: 'deploy v1.2.0',
+      },
+      {
+        time: '2025-09-18T10:05:00Z',
+        event: 'failure_rate_spike + DB_CONN_FAIL',
+      },
+      {
+        time: '2025-09-18T10:07:00Z',
+        event: 'incident escalated',
+      },
+    ],
+    suggested_solution: 'Revert deploy v1.2.0, increase DB pool size to 500',
+    preventive_plan: 'Run DB stress test in CI/CD before deploy',
+    status: '',
+    assignee: '',
+    reporter: '',
+    priority: '',
   },
   {
-    id: 'IS-0291',
-    summary: 'Slow transactions affecting the system',
-    status: 'RECOVERED',
-    severity: 'S3',
-    incidentType: 'HAPPENING',
-    created: '2025-09-12 12:16:23',
-    updated: '2025-09-12 17:45:12',
-    priority: 'HIGH',
+    incident_id: 'INC-20250918-01',
+    service: 'payment-service',
+    start_time: '2025-09-18T10:05:00Z',
+    severity: 'critical',
+    impact: {
+      users: 5000,
+      region: 'VN',
+    },
+    anomalies: [
+      {
+        metric: 'failure_rate',
+        change: '+12%',
+        value: '12.3%',
+      },
+      {
+        metric: 'rps',
+        change: '-3500',
+        value: '6000',
+      },
+    ],
+    log_clusters: ['DB_CONN_FAIL'],
+    change_event: 'deploy v1.2.0 at 10:03',
+    cause: 'DB connection pool misconfiguration after deploy',
+    timeline: [
+      {
+        time: '2025-09-18T10:03:00Z',
+        event: 'deploy v1.2.0',
+      },
+      {
+        time: '2025-09-18T10:05:00Z',
+        event: 'failure_rate_spike + DB_CONN_FAIL',
+      },
+      {
+        time: '2025-09-18T10:07:00Z',
+        event: 'incident escalated',
+      },
+    ],
+    suggested_solution: 'Revert deploy v1.2.0, increase DB pool size to 500',
+    preventive_plan: 'Run DB stress test in CI/CD before deploy',
+    status: '',
+    assignee: '',
+    reporter: '',
+    priority: '',
   },
   {
-    id: 'IS-0289',
-    summary: 'Slow transactions, affecting the entire system',
-    status: 'RECOVERED',
-    severity: 'S1',
-    incidentType: 'HAPPENING',
-    created: '2025-09-10 20:58:42',
-    updated: '2025-09-10 23:15:00',
-    priority: 'HIGH',
-  },
-  {
-    id: 'IS-0288',
-    summary: 'Stop transactions to handle slow transactions',
-    status: 'CLOSED',
-    severity: 'S1',
-    incidentType: 'HAPPENING',
-    created: '2025-09-10 20:30:53',
-    updated: '2025-09-10 20:45:12',
-    priority: 'HIGH',
+    incident_id: 'INC-20250918-01',
+    service: 'payment-service',
+    start_time: '2025-09-18T10:05:00Z',
+    severity: 'critical',
+    impact: {
+      users: 5000,
+      region: 'VN',
+    },
+    anomalies: [
+      {
+        metric: 'failure_rate',
+        change: '+12%',
+        value: '12.3%',
+      },
+      {
+        metric: 'rps',
+        change: '-3500',
+        value: '6000',
+      },
+    ],
+    log_clusters: ['DB_CONN_FAIL'],
+    change_event: 'deploy v1.2.0 at 10:03',
+    cause: 'DB connection pool misconfiguration after deploy',
+    timeline: [
+      {
+        time: '2025-09-18T10:03:00Z',
+        event: 'deploy v1.2.0',
+      },
+      {
+        time: '2025-09-18T10:05:00Z',
+        event: 'failure_rate_spike + DB_CONN_FAIL',
+      },
+      {
+        time: '2025-09-18T10:07:00Z',
+        event: 'incident escalated',
+      },
+    ],
+    suggested_solution: 'Revert deploy v1.2.0, increase DB pool size to 500',
+    preventive_plan: 'Run DB stress test in CI/CD before deploy',
+    status: '',
+    assignee: '',
+    reporter: '',
+    priority: '',
   },
 ];
 
 const TicketPage = () => {
   const [selectedRowKeys, setSelectedRowKeys] = useState<string[]>([]);
   const navigate = useNavigate();
-  const columns: ProColumns<Ticket>[] = [
+  const columns: ProColumns<AlerIncident>[] = [
     {
       title: 'ID',
-      dataIndex: 'id',
-      key: 'id',
+      dataIndex: 'incident_id',
+      key: 'incident_id',
       width: 100,
-      render: (dom: ReactNode, record: Ticket) => (
-        <span className="text-blue-600 font-medium">{record.id}</span>
+      render: (dom: ReactNode, record: AlerIncident) => (
+        <span className="text-blue-600 font-medium">{record.incident_id}</span>
       ),
     },
     {
-      title: 'SUMMARY',
-      dataIndex: 'summary',
-      key: 'summary',
-      width: 400,
+      title: 'SERVICE',
+      dataIndex: 'service',
+      key: 'service',
+      width: 180,
+      render: (dom: ReactNode, record: AlerIncident) => (
+        <span className="text-white font-bold">{record.service}</span>
+      ),
     },
     {
-      title: 'STATUS',
-      dataIndex: 'status',
-      key: 'status',
-      width: 120,
-      render: (dom: ReactNode, record: Ticket) => (
-        <Tag
-          className={`text-white px-3 py-1 rounded-full`}
-          color={ticketStatusColors[record.status]}
-        >
-          {record.status}
-        </Tag>
+      title: 'START TIME',
+      dataIndex: 'start_time',
+      key: 'start_time',
+      width: 180,
+      render: (dom: ReactNode, record: AlerIncident) => (
+        <span className="text-gray-200 font-medium">
+          {dayjs(record.start_time).format('YYYY-MM-DD HH:mm:ss')}
+        </span>
       ),
-      filters: [
-        { text: 'CLOSED', value: 'CLOSED' },
-        { text: 'RECOVERED', value: 'RECOVERED' },
-        { text: 'RECOVERING', value: 'RECOVERING' },
-        { text: 'OPEN', value: 'OPEN' },
-      ],
+      sorter: true,
     },
     {
       title: 'SEVERITY',
       dataIndex: 'severity',
       key: 'severity',
       width: 120,
-      render: (dom: ReactNode, record: Ticket) => (
+      render: (dom: ReactNode, record: AlerIncident) => (
         <Tag
           className={`text-white px-3 py-1 rounded-full`}
-          color={severityColors[record.severity]}
+          color={severityColors[record.severity as TicketSeverity]}
         >
           {record.severity}
         </Tag>
       ),
       filters: [
-        { text: 'S1 - Critical', value: 'S1' },
-        { text: 'S2 - High', value: 'S2' },
-        { text: 'S3 - Medium', value: 'S3' },
+        { text: 'Critical', value: 'critical' },
+        { text: 'High', value: 'high' },
+        { text: 'Medium', value: 'medium' },
       ],
     },
     {
-      title: 'INCIDENT TYPE',
-      dataIndex: 'incidentType',
-      key: 'incidentType',
-      width: 150,
-      render: (dom: ReactNode, record: Ticket) => (
-        <Tag
-          className={`text-white px-3 py-1 rounded-full`}
-          color={incidentTypeColors[record.incidentType]}
-        >
-          {record.incidentType}
-        </Tag>
-      ),
-      filters: [
-        { text: 'HAPPENING', value: 'HAPPENING' },
-        { text: 'RESOLVED', value: 'RESOLVED' },
-      ],
-    },
-    {
-      title: 'CREATED',
-      dataIndex: 'created',
-      key: 'created',
-      width: 180,
-      sorter: true,
-    },
-    {
-      title: 'UPDATED',
-      dataIndex: 'updated',
-      key: 'updated',
-      width: 180,
-      sorter: true,
+      title: 'CAUSE',
+      dataIndex: 'cause',
+      key: 'cause',
+      width: 400,
     },
   ];
 
   const toolBarRender = () => [
     <Search
       key="search"
-      placeholder="Search tickets..."
+      placeholder="Search incidents..."
       className="w-64"
       allowClear
     />,
-    <Select
-      key="status"
-      placeholder="Status: All"
-      className="w-40"
-      allowClear
-      showSearch
-      optionFilterProp="children"
-    >
-      <Select.Option value="CLOSED">CLOSED</Select.Option>
-      <Select.Option value="RECOVERED">RECOVERED</Select.Option>
-      <Select.Option value="RECOVERING">RECOVERING</Select.Option>
-      <Select.Option value="OPEN">OPEN</Select.Option>
-    </Select>,
+    // <Select
+    //   key="status"
+    //   placeholder="Status: All"
+    //   className="w-40"
+    //   allowClear
+    //   showSearch
+    //   optionFilterProp="children"
+    // >
+    //   <Select.Option value="CLOSED">CLOSED</Select.Option>
+    //   <Select.Option value="RECOVERED">RECOVERED</Select.Option>
+    //   <Select.Option value="RECOVERING">RECOVERING</Select.Option>
+    //   <Select.Option value="OPEN">OPEN</Select.Option>
+    // </Select>,
     <Select
       key="severity"
       placeholder="Severity: All"
@@ -188,24 +283,13 @@ const TicketPage = () => {
       showSearch
       optionFilterProp="children"
     >
-      <Select.Option value="S1">S1 - Critical</Select.Option>
-      <Select.Option value="S2">S2 - High</Select.Option>
-      <Select.Option value="S3">S3 - Medium</Select.Option>
+      <Select.Option value="critical">Critical</Select.Option>
+      <Select.Option value="high">High</Select.Option>
+      <Select.Option value="medium">Medium</Select.Option>
     </Select>,
-    <Select
-      key="incidentType"
-      placeholder="Incident Type: All"
-      className="w-44"
-      allowClear
-      showSearch
-      optionFilterProp="children"
-    >
-      <Select.Option value="HAPPENING">HAPPENING</Select.Option>
-      <Select.Option value="RESOLVED">RESOLVED</Select.Option>
-    </Select>,
-    <Button key="create" type="primary" icon={<Plus color="black" />}>
-      <span className="text-black">Create Ticket</span>
-    </Button>,
+    // <Button key="create" type="primary" icon={<Plus color="black" />}>
+    //   <span className="text-black">Create Ticket</span>
+    // </Button>,
   ];
 
   const customEmpty = () => (
@@ -227,14 +311,14 @@ const TicketPage = () => {
       <div>
         <div className="mb-6">
           <h1 className="text-2xl font-bold text-white">
-            Ticket Management System
+            Alert Incident Management
           </h1>
           <p className="text-gray-600">
-            Manage and track system incidents effectively
+            Manage and track alert incidents effectively
           </p>
         </div>
 
-        <ProTable<Ticket>
+        <ProTable<AlerIncident>
           columns={columns}
           rowKey="id"
           search={false}
@@ -246,18 +330,6 @@ const TicketPage = () => {
             selectionAll: 'Select All',
             selectNone: 'Clear All',
             selectInvert: 'Invert Selection',
-            columnDisplay: 'Column Display',
-            columnSetting: 'Column Setting',
-            reset: 'Reset',
-            density: 'Density',
-            densityDefault: 'Default',
-            densityLarger: 'Larger',
-            densityMiddle: 'Middle',
-            densitySmall: 'Compact',
-            fullScreen: 'Full Screen',
-            exitFullScreen: 'Exit Full Screen',
-            reload: 'Reload',
-            setting: 'Settings',
           }}
           rowSelection={{
             selectedRowKeys,
@@ -266,12 +338,12 @@ const TicketPage = () => {
             },
           }}
           tooltip={{
-            title: 'INCIDENT TICKET (IS)',
+            title: 'ALERT INCIDENT MANAGEMENT',
             placement: 'top',
           }}
           onRow={(record) => ({
             onClick: () => {
-              navigate(`/ticket/${record.id}`);
+              navigate(`/alert-incident-management/${record.incident_id}`);
             },
           })}
           pagination={{
