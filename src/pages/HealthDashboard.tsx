@@ -1,9 +1,24 @@
-import { Card, Col, Row, Segmented, Space, Statistic, Tag, Button } from 'antd';
+import {
+  Card,
+  Col,
+  Row,
+  Segmented,
+  Space,
+  Statistic,
+  Tag,
+  Button,
+  Tabs,
+  Alert,
+  Badge,
+  Table,
+  Avatar,
+} from 'antd';
 import ReactECharts from 'echarts-for-react';
 import dayjs from 'dayjs';
 import { useMemo, useEffect, useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { useRealTimeMetrics } from '../hooks/useRealTimeMetrics';
+import { Bell, AlertTriangle, ChevronDown, Clock, User } from 'lucide-react';
 import type {
   ServiceName,
   ServiceStatus,
@@ -95,6 +110,408 @@ function buildLineOptions(
   };
 }
 
+// Status Dashboard Component
+function StatusDashboard() {
+  const [activeTab, setActiveTab] = useState('status');
+
+  // Mock incident data
+  const incidents = [
+    {
+      id: 'INC-001',
+      service: 'PayontheGo Financial Services',
+      problem:
+        '[Synthetics] Datadog has detected a problem with Payment Web API - critical',
+      impactedService: 'Web - Backend for Frontend Server',
+      priority: 'P2',
+      priorityColor: 'orange',
+      subscribed: true,
+      status: 'investigating',
+      statusColor: 'orange',
+      assignee: {
+        name: 'John Smith',
+        avatar:
+          'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=32&h=32&fit=crop&crop=face',
+      },
+      createdAt: '2025-01-20 14:30:00',
+      updatedAt: '2025-01-20 15:45:00',
+      duration: '1h 15m',
+    },
+    {
+      id: 'INC-002',
+      service: 'Mobile Services',
+      problem:
+        'prod-mobile Request Response Time is High - (95th percentile > 250 ms on average during the last 10m)',
+      impactedService: 'Mobile - Backend for Frontend Server',
+      priority: 'P3',
+      priorityColor: 'blue',
+      subscribed: false,
+      status: 'monitoring',
+      statusColor: 'blue',
+      assignee: {
+        name: 'Sarah Johnson',
+        avatar:
+          'https://images.unsplash.com/photo-1494790108755-2616b612b786?w=32&h=32&fit=crop&crop=face',
+      },
+      createdAt: '2025-01-20 13:15:00',
+      updatedAt: '2025-01-20 14:20:00',
+      duration: '2h 5m',
+    },
+    {
+      id: 'INC-003',
+      service: 'Payment Services',
+      problem: 'Elevated response times in payment mobile in prod-mobile',
+      impactedService: 'Mobile - Backend for Frontend Server',
+      priority: 'P3',
+      priorityColor: 'blue',
+      subscribed: false,
+      status: 'resolved',
+      statusColor: 'green',
+      assignee: {
+        name: 'Mike Chen',
+        avatar:
+          'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=32&h=32&fit=crop&crop=face',
+      },
+      createdAt: '2025-01-20 12:00:00',
+      updatedAt: '2025-01-20 13:30:00',
+      duration: '1h 30m',
+    },
+    {
+      id: 'INC-004',
+      service: 'Database Services',
+      problem: 'High CPU usage detected on primary database server',
+      impactedService: 'Database - Primary Server',
+      priority: 'P1',
+      priorityColor: 'red',
+      subscribed: true,
+      status: 'investigating',
+      statusColor: 'red',
+      assignee: {
+        name: 'Alex Rodriguez',
+        avatar:
+          'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=32&h=32&fit=crop&crop=face',
+      },
+      createdAt: '2025-01-20 16:00:00',
+      updatedAt: '2025-01-20 16:15:00',
+      duration: '15m',
+    },
+    {
+      id: 'INC-005',
+      service: 'API Gateway',
+      problem: 'Rate limiting errors affecting multiple endpoints',
+      impactedService: 'API Gateway - Load Balancer',
+      priority: 'P2',
+      priorityColor: 'orange',
+      subscribed: false,
+      status: 'monitoring',
+      statusColor: 'blue',
+      assignee: {
+        name: 'Emma Wilson',
+        avatar:
+          'https://images.unsplash.com/photo-1438761681033-6461ffad8d80?w=32&h=32&fit=crop&crop=face',
+      },
+      createdAt: '2025-01-20 15:30:00',
+      updatedAt: '2025-01-20 15:45:00',
+      duration: '15m',
+    },
+  ];
+
+  const tabItems = [
+    {
+      key: 'incidents',
+      label: 'Incidents',
+    },
+    {
+      key: 'status',
+      label: (
+        <Space>
+          Status Dashboard
+          <AlertTriangle size={12} color="red" />
+        </Space>
+      ),
+    },
+  ];
+
+  return (
+    <div style={{ height: '100%' }}>
+      <Tabs
+        activeKey={activeTab}
+        onChange={setActiveTab}
+        items={tabItems}
+        style={{ marginBottom: 16 }}
+      />
+
+      {activeTab === 'status' && (
+        <Space direction="vertical" size={16} style={{ width: '100%' }}>
+          {/* Alert Banner */}
+          <Alert
+            message={
+              <Space direction="vertical" size={4} style={{ width: '100%' }}>
+                <div
+                  style={{ fontSize: '12px', color: 'rgba(255,255,255,0.8)' }}
+                >
+                  PayontheGo Operations
+                </div>
+                <div style={{ fontSize: '18px', fontWeight: 'bold' }}>
+                  {incidents.filter((i) => i.status !== 'resolved').length}{' '}
+                  disrupted business service
+                  {incidents.filter((i) => i.status !== 'resolved').length !== 1
+                    ? 's'
+                    : ''}
+                </div>
+                <div
+                  style={{ fontSize: '12px', color: 'rgba(255,255,255,0.8)' }}
+                >
+                  Last updated a few seconds ago
+                </div>
+              </Space>
+            }
+            type="error"
+            style={{
+              backgroundColor: '#ff4d4f',
+              border: 'none',
+              color: 'white',
+            }}
+          />
+
+          {/* Incident Cards */}
+          <Space direction="vertical" size={12} style={{ width: '100%' }}>
+            {incidents.map((incident) => (
+              <Card
+                key={incident.id}
+                size="small"
+                style={{
+                  backgroundColor: '#18181b',
+                  border: '1px solid #3f3f46',
+                  borderRadius: '8px',
+                }}
+                bodyStyle={{ padding: '12px' }}
+              >
+                <Space direction="vertical" size={8} style={{ width: '100%' }}>
+                  {/* Header */}
+                  <div
+                    style={{
+                      display: 'flex',
+                      justifyContent: 'space-between',
+                      alignItems: 'center',
+                    }}
+                  >
+                    <Space>
+                      <AlertTriangle size={16} color="red" />
+                      <span style={{ fontWeight: 'bold', color: '#f4f4f5' }}>
+                        {incident.service}
+                      </span>
+                    </Space>
+                    <Space>
+                      <Badge
+                        count={incident.priority}
+                        style={{
+                          backgroundColor: incident.priorityColor,
+                          color: 'white',
+                        }}
+                      />
+                      <ChevronDown size={16} color="#a1a1aa" />
+                    </Space>
+                  </div>
+
+                  {/* Problem Description */}
+                  <div style={{ color: '#60a5fa', fontSize: '14px' }}>
+                    {incident.problem}
+                  </div>
+
+                  {/* Impacted Service */}
+                  <div style={{ color: '#a1a1aa', fontSize: '12px' }}>
+                    Impacted Service: {incident.impactedService}
+                  </div>
+
+                  {/* Status and Priority */}
+                  <div
+                    style={{
+                      display: 'flex',
+                      justifyContent: 'space-between',
+                      alignItems: 'center',
+                    }}
+                  >
+                    <Space>
+                      <Tag
+                        color={incident.statusColor}
+                        style={{ fontSize: '10px' }}
+                      >
+                        {incident.status.toUpperCase()}
+                      </Tag>
+                      <span style={{ color: '#a1a1aa', fontSize: '12px' }}>
+                        Priority: {incident.priority}
+                      </span>
+                    </Space>
+                    <Space>
+                      <Clock size={12} color="#a1a1aa" />
+                      <span style={{ color: '#a1a1aa', fontSize: '11px' }}>
+                        {incident.duration}
+                      </span>
+                    </Space>
+                  </div>
+
+                  {/* Assignee */}
+                  <div
+                    style={{
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '8px',
+                    }}
+                  >
+                    <User size={12} color="#a1a1aa" />
+                    <Avatar size={16} src={incident.assignee.avatar}>
+                      {incident.assignee.name
+                        .split(' ')
+                        .map((n) => n[0])
+                        .join('')}
+                    </Avatar>
+                    <span style={{ color: '#a1a1aa', fontSize: '11px' }}>
+                      {incident.assignee.name}
+                    </span>
+                  </div>
+
+                  {/* Subscription Status */}
+                  {incident.subscribed && (
+                    <div
+                      style={{
+                        color: '#4ade80',
+                        fontSize: '12px',
+                        display: 'flex',
+                        alignItems: 'center',
+                      }}
+                    >
+                      <Bell size={12} style={{ marginRight: '4px' }} />
+                      You are subscribed to this incident.
+                    </div>
+                  )}
+                </Space>
+              </Card>
+            ))}
+          </Space>
+
+          {/* Related Business Services */}
+          <Card
+            size="small"
+            style={{
+              backgroundColor: '#18181b',
+              border: '1px solid #3f3f46',
+            }}
+          >
+            <div style={{ color: '#a1a1aa', fontSize: '12px' }}>
+              Related business services
+            </div>
+          </Card>
+        </Space>
+      )}
+
+      {activeTab === 'incidents' && (
+        <div style={{ width: '100%' }}>
+          <Table
+            dataSource={incidents}
+            pagination={false}
+            size="small"
+            rowKey="id"
+            columns={[
+              {
+                title: 'Incident',
+                key: 'incident',
+                render: (_, record) => (
+                  <Space direction="vertical" size={4}>
+                    <div
+                      style={{
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '8px',
+                      }}
+                    >
+                      <AlertTriangle size={14} color="red" />
+                      <span
+                        style={{
+                          fontWeight: 'bold',
+                          fontSize: '13px',
+                          color: '#f4f4f5',
+                        }}
+                      >
+                        {record.service}
+                      </span>
+                    </div>
+                    <div
+                      style={{
+                        color: '#60a5fa',
+                        fontSize: '12px',
+                        marginLeft: '22px',
+                      }}
+                    >
+                      {record.problem}
+                    </div>
+                  </Space>
+                ),
+              },
+              {
+                title: 'Status',
+                key: 'status',
+                width: 100,
+                render: (_, record) => (
+                  <Tag color={record.statusColor} style={{ fontSize: '11px' }}>
+                    {record.status.toUpperCase()}
+                  </Tag>
+                ),
+              },
+              {
+                title: 'Priority',
+                key: 'priority',
+                width: 80,
+                render: (_, record) => (
+                  <Badge
+                    count={record.priority}
+                    style={{
+                      backgroundColor: record.priorityColor,
+                      color: 'white',
+                      fontSize: '10px',
+                    }}
+                  />
+                ),
+              },
+              {
+                title: 'Assignee',
+                key: 'assignee',
+                width: 120,
+                render: (_, record) => (
+                  <Space size={4}>
+                    <Avatar size={20} src={record.assignee.avatar}>
+                      {record.assignee.name
+                        .split(' ')
+                        .map((n) => n[0])
+                        .join('')}
+                    </Avatar>
+                    <span style={{ fontSize: '11px', color: '#a1a1aa' }}>
+                      {record.assignee.name}
+                    </span>
+                  </Space>
+                ),
+              },
+              {
+                title: 'Duration',
+                key: 'duration',
+                width: 80,
+                render: (_, record) => (
+                  <Space size={4}>
+                    <Clock size={12} color="#a1a1aa" />
+                    <span style={{ fontSize: '11px', color: '#a1a1aa' }}>
+                      {record.duration}
+                    </span>
+                  </Space>
+                ),
+              },
+            ]}
+            style={{ backgroundColor: '#18181b' }}
+          />
+        </div>
+      )}
+    </div>
+  );
+}
+
 export default function HealthDashboard() {
   const [searchParams] = useSearchParams();
   type Preset = '15m' | '1h' | '6h' | '24h';
@@ -177,140 +594,159 @@ export default function HealthDashboard() {
   );
 
   return (
-    <Space direction="vertical" size={16} style={{ display: 'flex' }}>
-      <Card>
-        <Space align="center" wrap>
-          <h4 style={{ margin: 0 }}>System Health</h4>
-          <Segmented
-            options={[
-              { label: '15m', value: '15m' },
-              { label: '1h', value: '1h' },
-              { label: '6h', value: '6h' },
-              { label: '24h', value: '24h' },
-            ]}
-            value={preset}
-            onChange={(v) => setPreset(v as Preset)}
-          />
-          {latestTimestamp && (
-            <span style={{ color: '#6b7280' }}>
-              Updated: {dayjs(latestTimestamp).format('YYYY-MM-DD HH:mm:ss')}
-            </span>
-          )}
-          <Button onClick={() => controls.resetSeries()}>Reset</Button>
-        </Space>
-      </Card>
+    <Row gutter={[24, 16]} style={{ height: '100%' }}>
+      {/* Left Column - Health Dashboard */}
+      <Col xs={24} lg={16}>
+        <Space
+          direction="vertical"
+          size={16}
+          style={{ display: 'flex', height: '100%' }}
+        >
+          <Card>
+            <Space align="center" wrap>
+              <h4 style={{ margin: 0 }}>System Health</h4>
+              <Segmented
+                options={[
+                  { label: '15m', value: '15m' },
+                  { label: '1h', value: '1h' },
+                  { label: '6h', value: '6h' },
+                  { label: '24h', value: '24h' },
+                ]}
+                value={preset}
+                onChange={(v) => setPreset(v as Preset)}
+              />
+              {latestTimestamp && (
+                <span style={{ color: '#6b7280' }}>
+                  Updated:{' '}
+                  {dayjs(latestTimestamp).format('YYYY-MM-DD HH:mm:ss')}
+                </span>
+              )}
+              <Button onClick={() => controls.resetSeries()}>Reset</Button>
+            </Space>
+          </Card>
 
-      <Row gutter={[16, 16]}>
-        {visibleServices.map((s) => {
-          const last = lastByService[s];
-          const status =
-            seriesByService[s]?.status ?? ('healthy' as ServiceStatus);
-          return (
-            <Col key={s} xs={24} md={12} lg={6}>
+          <Row gutter={[16, 16]}>
+            {visibleServices.map((s) => {
+              const last = lastByService[s];
+              const status =
+                seriesByService[s]?.status ?? ('healthy' as ServiceStatus);
+              return (
+                <Col key={s} xs={24} md={12} lg={6}>
+                  <Card>
+                    <Space
+                      direction="vertical"
+                      size={8}
+                      style={{ width: '100%' }}
+                    >
+                      <Space align="center">
+                        <h5 style={{ margin: 0 }}>{s}</h5>
+                        <Tag color={statusColor(status)}>{status}</Tag>
+                      </Space>
+                      <Space size={16} wrap>
+                        <Statistic
+                          title="CPU"
+                          value={last?.cpuUsage ?? 0}
+                          suffix="%"
+                          precision={1}
+                        />
+                        <Statistic
+                          title="Mem"
+                          value={last?.memoryUsage ?? 0}
+                          suffix="%"
+                          precision={1}
+                        />
+                        <Statistic
+                          title="RT"
+                          value={last?.responseTime ?? 0}
+                          suffix="ms"
+                        />
+                        <Statistic
+                          title="Error"
+                          value={last?.errorRate ?? 0}
+                          suffix="%"
+                          precision={1}
+                          valueStyle={{
+                            color:
+                              (last?.errorRate ?? 0) > 10
+                                ? '#ff4d4f'
+                                : (last?.errorRate ?? 0) > 3
+                                  ? '#fa8c16'
+                                  : undefined,
+                          }}
+                        />
+                      </Space>
+                    </Space>
+                  </Card>
+                </Col>
+              );
+            })}
+          </Row>
+
+          <Row gutter={[16, 16]}>
+            <Col xs={24} lg={12}>
               <Card>
-                <Space direction="vertical" size={8} style={{ width: '100%' }}>
-                  <Space align="center">
-                    <h5 style={{ margin: 0 }}>{s}</h5>
-                    <Tag color={statusColor(status)}>{status}</Tag>
-                  </Space>
-                  <Space size={16} wrap>
-                    <Statistic
-                      title="CPU"
-                      value={last?.cpuUsage ?? 0}
-                      suffix="%"
-                      precision={1}
-                    />
-                    <Statistic
-                      title="Mem"
-                      value={last?.memoryUsage ?? 0}
-                      suffix="%"
-                      precision={1}
-                    />
-                    <Statistic
-                      title="RT"
-                      value={last?.responseTime ?? 0}
-                      suffix="ms"
-                    />
-                    <Statistic
-                      title="Error"
-                      value={last?.errorRate ?? 0}
-                      suffix="%"
-                      precision={1}
-                      valueStyle={{
-                        color:
-                          (last?.errorRate ?? 0) > 10
-                            ? '#ff4d4f'
-                            : (last?.errorRate ?? 0) > 3
-                              ? '#fa8c16'
-                              : undefined,
-                      }}
-                    />
-                  </Space>
-                </Space>
+                <ReactECharts
+                  notMerge
+                  lazyUpdate
+                  option={cpuOptions}
+                  style={{ height: 300 }}
+                />
               </Card>
             </Col>
-          );
-        })}
-      </Row>
+            <Col xs={24} lg={12}>
+              <Card>
+                <ReactECharts
+                  notMerge
+                  lazyUpdate
+                  option={memOptions}
+                  style={{ height: 300 }}
+                />
+              </Card>
+            </Col>
+            <Col xs={24} lg={12}>
+              <Card>
+                <ReactECharts
+                  notMerge
+                  lazyUpdate
+                  option={rtOptions}
+                  style={{ height: 300 }}
+                />
+              </Card>
+            </Col>
+            <Col xs={24} lg={12}>
+              <Card>
+                <ReactECharts
+                  notMerge
+                  lazyUpdate
+                  option={errOptions}
+                  style={{ height: 300 }}
+                />
+              </Card>
+            </Col>
+          </Row>
 
-      <Row gutter={[16, 16]}>
-        <Col xs={24} lg={12}>
           <Card>
-            <ReactECharts
-              notMerge
-              lazyUpdate
-              option={cpuOptions}
-              style={{ height: 300 }}
-            />
+            <Space direction="vertical">
+              <strong>Notes</strong>
+              <ul style={{ marginLeft: 18 }}>
+                <li>
+                  Threshold lines indicate warning/critical levels. Hover lines
+                  to see point values.
+                </li>
+                <li>
+                  Use the Logs page to investigate anomalies. Click a service
+                  name in Logs to deep-link here.
+                </li>
+              </ul>
+            </Space>
           </Card>
-        </Col>
-        <Col xs={24} lg={12}>
-          <Card>
-            <ReactECharts
-              notMerge
-              lazyUpdate
-              option={memOptions}
-              style={{ height: 300 }}
-            />
-          </Card>
-        </Col>
-        <Col xs={24} lg={12}>
-          <Card>
-            <ReactECharts
-              notMerge
-              lazyUpdate
-              option={rtOptions}
-              style={{ height: 300 }}
-            />
-          </Card>
-        </Col>
-        <Col xs={24} lg={12}>
-          <Card>
-            <ReactECharts
-              notMerge
-              lazyUpdate
-              option={errOptions}
-              style={{ height: 300 }}
-            />
-          </Card>
-        </Col>
-      </Row>
-
-      <Card>
-        <Space direction="vertical">
-          <strong>Notes</strong>
-          <ul style={{ marginLeft: 18 }}>
-            <li>
-              Threshold lines indicate warning/critical levels. Hover lines to
-              see point values.
-            </li>
-            <li>
-              Use the Logs page to investigate anomalies. Click a service name
-              in Logs to deep-link here.
-            </li>
-          </ul>
         </Space>
-      </Card>
-    </Space>
+      </Col>
+
+      {/* Right Column - Status Dashboard */}
+      <Col xs={24} lg={8}>
+        <StatusDashboard />
+      </Col>
+    </Row>
   );
 }
