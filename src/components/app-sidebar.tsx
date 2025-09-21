@@ -1,24 +1,14 @@
 import * as React from 'react';
 import {
   AudioWaveform,
-  Blocks,
   BotMessageSquare,
-  Calendar,
   Command,
-  Home,
-  Inbox,
-  MessageCircleQuestion,
-  Settings2,
   Ticket,
-  Trash2,
   Logs,
   SquareActivity,
 } from 'lucide-react';
 
-import { NavFavorites } from '@/components/nav-favorites';
 import { NavMain } from '@/components/nav-main';
-import { NavSecondary } from '@/components/nav-secondary';
-import { NavWorkspaces } from '@/components/nav-workspaces';
 import { TeamSwitcher } from '@/components/team-switcher';
 import {
   Sidebar,
@@ -31,17 +21,17 @@ import {
 const data = {
   teams: [
     {
-      name: 'Acme Inc',
+      name: 'Backend',
       logo: Command,
       plan: 'Enterprise',
     },
     {
-      name: 'Acme Corp.',
+      name: 'Data Platform',
       logo: AudioWaveform,
       plan: 'Startup',
     },
     {
-      name: 'Evil Corp.',
+      name: 'AI Platform',
       logo: Command,
       plan: 'Free',
     },
@@ -67,115 +57,6 @@ const data = {
       title: 'Health',
       url: '/health',
       icon: SquareActivity,
-    },
-    {
-      title: 'Home',
-      url: '#',
-      icon: Home,
-    },
-    {
-      title: 'Inbox',
-      url: '#',
-      icon: Inbox,
-      badge: '10',
-    },
-  ],
-  navSecondary: [
-    {
-      title: 'Calendar',
-      url: '#',
-      icon: Calendar,
-    },
-    {
-      title: 'Settings',
-      url: '#',
-      icon: Settings2,
-    },
-    {
-      title: 'Templates',
-      url: '#',
-      icon: Blocks,
-    },
-    {
-      title: 'Trash',
-      url: '#',
-      icon: Trash2,
-    },
-    {
-      title: 'Help',
-      url: '#',
-      icon: MessageCircleQuestion,
-    },
-  ],
-  favorites: [
-    {
-      name: 'Recent Chats',
-      url: '#',
-      emoji: '💬',
-    },
-    {
-      name: 'Saved Responses',
-      url: '#',
-      emoji: '📌',
-    },
-    {
-      name: 'Code Snippets',
-      url: '#',
-      emoji: '💻',
-    },
-    {
-      name: 'Documentation',
-      url: '#',
-      emoji: '📚',
-    },
-    {
-      name: 'API References',
-      url: '#',
-      emoji: '🔗',
-    },
-  ],
-  workspaces: [
-    {
-      name: 'Development',
-      emoji: '🛠️',
-      pages: [
-        {
-          name: 'Frontend Tasks',
-          url: '#',
-          emoji: '🎨',
-        },
-        {
-          name: 'Backend Tasks',
-          url: '#',
-          emoji: '⚙️',
-        },
-        {
-          name: 'API Documentation',
-          url: '#',
-          emoji: '📝',
-        },
-      ],
-    },
-    {
-      name: 'Project Management',
-      emoji: '📊',
-      pages: [
-        {
-          name: 'Active Sprints',
-          url: '#',
-          emoji: '🎯',
-        },
-        {
-          name: 'Backlog',
-          url: '#',
-          emoji: '📋',
-        },
-        {
-          name: 'Team Updates',
-          url: '#',
-          emoji: '👥',
-        },
-      ],
     },
   ],
 };

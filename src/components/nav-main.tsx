@@ -1,5 +1,5 @@
 import * as React from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useLocation } from 'react-router-dom';
 import { Badge } from './ui/badge';
 
 interface NavMainProps {
@@ -13,6 +13,7 @@ interface NavMainProps {
 }
 
 export function NavMain({ items }: NavMainProps) {
+  const location = useLocation();
   return (
     <div className="flex flex-col gap-1 p-2">
       {items.map((item) => {
@@ -24,7 +25,7 @@ export function NavMain({ items }: NavMainProps) {
             className={`
               group flex items-center gap-3 rounded-md px-3 py-2 text-sm font-medium transition-colors
               ${
-                item.isActive
+                item.url === location.pathname
                   ? 'bg-zinc-800 text-white'
                   : 'text-zinc-400 hover:bg-zinc-800/50 hover:text-white'
               }

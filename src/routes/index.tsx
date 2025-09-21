@@ -9,6 +9,14 @@ import TicketDetail from '@/pages/TicketDetail';
 
 export const router = createBrowserRouter([
   {
+    path: '/',
+    element: (
+      <MainLayoutWrapper sideBarContent={<></>} pageTitle="Home">
+        <ChatPage />
+      </MainLayoutWrapper>
+    ),
+  },
+  {
     path: '/ticket',
     element: (
       <MainLayoutWrapper sideBarContent={<></>} pageTitle="Tickets">

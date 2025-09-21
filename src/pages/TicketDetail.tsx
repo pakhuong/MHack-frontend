@@ -9,6 +9,7 @@ import {
   Ticket as TicketIcon,
 } from 'lucide-react';
 import { ConfigProvider, theme, Select } from 'antd';
+import enUS from 'antd/locale/en_US';
 import { Button } from '../components/ui/button';
 import { Avatar, AvatarFallback, AvatarImage } from '../components/ui/avatar';
 import { Input } from '../components/ui/input';
@@ -119,7 +120,8 @@ export default function TicketDetail() {
   };
 
   return (
-    <div className="min-h-screen bg-black">
+    <ConfigProvider locale={enUS}>
+      <div className="min-h-screen bg-black">
       <div className="flex">
         <div className="flex-1 p-6">
           <div className="mb-6">
@@ -499,5 +501,6 @@ export default function TicketDetail() {
         </div>
       </div>
     </div>
+    </ConfigProvider>
   );
 }

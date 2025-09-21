@@ -9,6 +9,7 @@ import {
   BreadcrumbPage,
 } from './ui/breadcrumb';
 import { ConfigProvider, theme } from 'antd';
+import enUS from 'antd/locale/en_US';
 
 type MainLayoutWrapperProps = {
   children: React.ReactNode;
@@ -20,6 +21,7 @@ export const MainLayoutWrapper = React.memo<MainLayoutWrapperProps>(
   ({ children, sideBarContent, pageTitle }) => {
     return (
       <ConfigProvider
+        locale={enUS}
         theme={{
           algorithm: theme.darkAlgorithm,
           token: {
