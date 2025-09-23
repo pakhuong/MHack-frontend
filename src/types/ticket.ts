@@ -39,7 +39,8 @@ export interface Comment {
   updated?: string;
 }
 
-export interface AlerIncident {
+export interface Incident {
+  _id: string;
   incident_id: string;
   service: string;
   start_time: string;
@@ -68,6 +69,48 @@ export interface AlerIncident {
   priority: string;
 }
 
+export interface Alert {
+  _id: string;
+  alert_id: string;
+  time: string;
+  service: string;
+  severity: string;
+  metric: {
+    name: string;
+    value: string;
+    baseline: string;
+    change: string;
+  };
+  cause: string;
+  impact: {
+    users: number;
+    region: string;
+  };
+  timeline: {
+    time: string;
+    event: string;
+  }[];
+  suggested_solution: string;
+  preventive_plan: string;
+  status: string;
+  assignee: string;
+  reporter: string;
+  priority: string;
+}
+
+export type AlertIncidenDetail = Alert | Incident;
+
+export type AlertIncident = {
+  _id: string;
+  id: string;
+  tag: 'incident' | 'alert';
+  time: string;
+  service: string;
+  severity: string;
+  status: string;
+  priority: string;
+};
+
 export const ticketStatusColors: Record<TicketStatus, string> = {
   CLOSED: 'green',
   RECOVERED: 'lime',
@@ -84,6 +127,11 @@ export const severityColors: Record<TicketSeverity, string> = {
   critical: 'red',
   high: 'orange',
   medium: 'yellow',
+};
+
+export const tagColors: Record<string, string> = {
+  incident: 'red',
+  alert: 'yellow',
 };
 
 export const priorityColors: Record<TicketPriority, string> = {

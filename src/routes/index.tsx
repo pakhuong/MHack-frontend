@@ -24,16 +24,30 @@ export const router = createBrowserRouter([
   {
     path: '/alert-incident-management',
     element: (
-      <MainLayoutWrapper sideBarContent={<></>} pageTitle="Alert/Incident Management">
+      <MainLayoutWrapper
+        sideBarContent={<></>}
+        pageTitle="Alert/Incident Management"
+      >
         <TicketPage />
       </MainLayoutWrapper>
     ),
   },
   {
-    path: '/alert-incident-management/:id',
+    path: '/alert-incident-management/alert/:id',
     element: (
-      <MainLayoutWrapper sideBarContent={<></>} pageTitle="Alert Incident Detail">
-        <TicketDetail />
+      <MainLayoutWrapper
+        sideBarContent={<></>}
+        pageTitle="Alert Incident Detail"
+      >
+        <TicketDetail tag="alert" />
+      </MainLayoutWrapper>
+    ),
+  },
+  {
+    path: '/alert-incident-management/incident/:id',
+    element: (
+      <MainLayoutWrapper sideBarContent={<></>} pageTitle="Incident Detail">
+        <TicketDetail tag="incident" />
       </MainLayoutWrapper>
     ),
   },

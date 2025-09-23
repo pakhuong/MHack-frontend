@@ -10,7 +10,8 @@
     "lint:fix": "eslint . --fix",
     "format": "prettier --write .",
     "typecheck": "tsc --noEmit",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "mock-server": "node mock-server.js"
   },
   "dependencies": {
     "@ant-design/pro-components": "^2.8.10",
@@ -28,11 +29,14 @@
     "@tailwindcss/vite": "^4.1.13",
     "antd": "^5.27.4",
     "autoprefixer": "^10.4.21",
+    "axios": "^1.12.2",
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
+    "cors": "^2.8.5",
     "dayjs": "^1.11.18",
     "echarts": "^5.6.0",
     "echarts-for-react": "^3.0.2",
+    "express": "^5.1.0",
     "lucide-react": "^0.544.0",
     "postcss": "^8.5.6",
     "react": "^19.1.1",

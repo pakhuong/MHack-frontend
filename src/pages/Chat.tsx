@@ -14,6 +14,7 @@ import {
   BookOpen,
   FileText,
   LoaderIcon,
+  Plus,
   Send,
   User,
 } from 'lucide-react';
@@ -314,8 +315,13 @@ const ChatPage = () => {
   const [reports] = useState(mockReports);
   const [threads] = useState(mockThreads);
   const [selectedThread, setSelectedThread] = useState<Thread | null>(null);
-  const [showSidebar, setShowSidebar] = useState(true);
+  const [showSidebar] = useState(true);
+  const [streamingMessageId, setStreamingMessageId] = useState<string | null>(
+    null
+  );
+  const [streamingText, setStreamingText] = useState('');
   const messagesEndRef = useRef<HTMLDivElement>(null);
+  const streamingIntervalRef = useRef<NodeJS.Timeout | null>(null);
 
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
@@ -323,7 +329,76 @@ const ChatPage = () => {
 
   useEffect(() => {
     scrollToBottom();
-  }, [currentConversation?.messages]);
+  }, [currentConversation?.messages, streamingText]);
+
+  // Clean up streaming interval on unmount
+  useEffect(() => {
+    return () => {
+      if (streamingIntervalRef.current) {
+        clearInterval(streamingIntervalRef.current);
+      }
+    };
+  }, []);
+
+  const startStreaming = (fullText: string, messageId: string) => {
+    console.log(
+      'Starting streaming for:',
+      messageId,
+      'with text length:',
+      fullText.length
+    );
+    setStreamingMessageId(messageId);
+    setStreamingText('');
+
+    let currentIndex = 0;
+    const streamingSpeed = 30; // milliseconds between characters
+
+    streamingIntervalRef.current = setInterval(() => {
+      if (currentIndex < fullText.length) {
+        const currentText = fullText.substring(0, currentIndex + 1);
+        console.log(
+          'Streaming progress:',
+          currentIndex,
+          '/',
+          fullText.length,
+          ':',
+          currentText.slice(-5)
+        );
+        setStreamingText(currentText);
+        currentIndex++;
+      } else {
+        // Streaming complete
+        console.log('Streaming completed for:', messageId);
+        clearInterval(streamingIntervalRef.current!);
+
+        // Update the actual message content first
+        setCurrentConversation((prev) => {
+          if (!prev) return prev;
+          const updatedMessages = prev.messages.map((msg) =>
+            msg.id === messageId ? { ...msg, content: fullText } : msg
+          );
+          const updatedConversation = {
+            ...prev,
+            messages: updatedMessages,
+            updatedAt: new Date().toISOString(),
+          };
+
+          // Update conversations array immediately
+          setConversations((prevConvs) =>
+            prevConvs.map((conv) =>
+              conv.id === updatedConversation.id ? updatedConversation : conv
+            )
+          );
+
+          return updatedConversation;
+        });
+
+        // Clear streaming state only after ensuring message is updated
+        setStreamingMessageId(null);
+        setStreamingText('');
+      }
+    }, streamingSpeed);
+  };
 
   const handleThreadClick = (thread: Thread) => {
     setSelectedThread(thread);
@@ -355,10 +430,17 @@ const ChatPage = () => {
       timestamp: new Date().toISOString(),
     };
 
+    // Clear input and set loading
+    setInputValue('');
+    setIsLoading(true);
+
+    // Store the input value before clearing
+    const userInput = inputValue.trim();
+
     if (!currentConversation) {
       const newConversation: Conversation = {
         id: Date.now().toString(),
-        title: inputValue.slice(0, 30) + (inputValue.length > 30 ? '...' : ''),
+        title: userInput.slice(0, 30) + (userInput.length > 30 ? '...' : ''),
         messages: [newMessage],
         createdAt: new Date().toISOString(),
         updatedAt: new Date().toISOString(),
@@ -377,26 +459,23 @@ const ChatPage = () => {
           conv.id === updatedConversation.id ? updatedConversation : conv
         )
       );
-      setInputValue('');
     }
-
-    setInputValue('');
-    setIsLoading(true);
 
     // Simulate API call
     setTimeout(() => {
       // Check if message might generate an incident
       const shouldGenerateIncident =
-        inputValue.toLowerCase().includes('error') ||
-        inputValue.toLowerCase().includes('incident') ||
-        inputValue.toLowerCase().includes('failure') ||
-        inputValue.toLowerCase().includes('down');
+        userInput.toLowerCase().includes('error') ||
+        userInput.toLowerCase().includes('incident') ||
+        userInput.toLowerCase().includes('failure') ||
+        userInput.toLowerCase().includes('down');
 
-      let botResponse: MessageType;
+      let botResponseContent: string;
+      let incidentData: AlerIncident | undefined;
 
       if (shouldGenerateIncident) {
         // Generate response with incident object
-        const incidentData: AlerIncident = {
+        incidentData = {
           incident_id: `INC-${new Date().toISOString().split('T')[0].replace(/-/g, '')}-${Math.floor(
             Math.random() * 100
           )
@@ -422,40 +501,45 @@ const ChatPage = () => {
           priority: 'MEDIUM',
         };
 
-        botResponse = {
-          id: Date.now().toString(),
-          role: 'assistant',
-          content:
-            "I've analyzed your message and detected a potential system issue. Here's the incident report I've created:",
-          timestamp: new Date().toISOString(),
-          incident: incidentData,
-        };
+        botResponseContent =
+          "I've analyzed your message and detected a potential system issue. Let me investigate this further and create an incident report for you. Based on the keywords in your message, this appears to be a system-related problem that requires immediate attention. I'm gathering relevant metrics and logs to provide you with a comprehensive analysis.";
       } else {
-        botResponse = {
-          id: Date.now().toString(),
-          role: 'assistant',
-          content:
-            'I understand your query. How can I help you further with system monitoring and incident management?',
-          timestamp: new Date().toISOString(),
-        };
+        botResponseContent =
+          "I understand your query about system monitoring and incident management. I'm here to help you with various tasks including analyzing system performance, detecting anomalies, creating incident reports, and providing recommendations for system improvements. What specific aspect would you like me to focus on?";
       }
 
-      if (currentConversation) {
-        const updatedConversation = {
-          ...currentConversation,
-          messages: [...currentConversation.messages, newMessage, botResponse],
+      // Create bot response with empty content initially (for streaming)
+      const botResponse: MessageType = {
+        id: Date.now().toString(),
+        role: 'assistant',
+        content: '', // Start with empty content
+        timestamp: new Date().toISOString(),
+        incident: incidentData,
+      };
+
+      // Add bot response to current conversation
+      setCurrentConversation((prev) => {
+        if (!prev) return null;
+        const updated = {
+          ...prev,
+          messages: [...prev.messages, botResponse],
           updatedAt: new Date().toISOString(),
         };
-        setCurrentConversation(updatedConversation);
-        setConversations(
-          conversations.map((conv) =>
-            conv.id === updatedConversation.id ? updatedConversation : conv
-          )
-        );
-      }
 
-      setIsLoading(false);
-    }, 1500);
+        // Also update conversations array
+        setConversations((prevConvs) =>
+          prevConvs.map((conv) => (conv.id === updated.id ? updated : conv))
+        );
+
+        return updated;
+      });
+
+      // Start streaming the response after a short delay
+      setTimeout(() => {
+        setIsLoading(false);
+        startStreaming(botResponseContent, botResponse.id);
+      }, 500);
+    }, 1000);
   };
 
   const handleSuggestionClick = (text: string) => {
@@ -480,11 +564,14 @@ const ChatPage = () => {
     setTimeout(() => {
       const lastMessage =
         currentConversation.messages[currentConversation.messages.length - 1];
+
+      const regeneratedContent =
+        "This is a regenerated response with new insights. I've analyzed the situation again and can provide additional context or alternative solutions. Let me know if you need more specific information or if there's another approach you'd like me to explore.";
+
       const newResponse: MessageType = {
         ...lastMessage,
         id: Date.now().toString(),
-        content:
-          'This is a regenerated response. Replace with actual API integration.',
+        content: '', // Start with empty content for streaming
         timestamp: new Date().toISOString(),
       };
 
@@ -504,7 +591,12 @@ const ChatPage = () => {
           conv.id === updatedConversation.id ? updatedConversation : conv
         )
       );
-      setIsLoading(false);
+
+      // Start streaming the regenerated response
+      setTimeout(() => {
+        setIsLoading(false);
+        startStreaming(regeneratedContent, newResponse.id);
+      }, 500);
     }, 1000);
   };
 
@@ -540,22 +632,43 @@ const ChatPage = () => {
             )}
           </div>
 
-          {currentConversation?.messages.map((message) => (
-            <Message
-              key={message.id}
-              message={message}
-              onEdit={handleEditMessage}
-              onRegenerate={
-                message.role === 'assistant' &&
-                message.id ===
-                  currentConversation.messages[
-                    currentConversation.messages.length - 1
-                  ].id
-                  ? handleRegenerate
-                  : undefined
-              }
-            />
-          ))}
+          {currentConversation?.messages.map((message) => {
+            // Check if this message is currently streaming
+            const isStreaming = streamingMessageId === message.id;
+            const displayMessage = isStreaming
+              ? { ...message, content: streamingText }
+              : message;
+
+            if (message.role === 'assistant') {
+              console.log('Rendering assistant message:', {
+                messageId: message.id,
+                isStreaming,
+                streamingMessageId,
+                originalContent: message.content,
+                streamingText: streamingText.slice(0, 20) + '...',
+                displayContent: displayMessage.content.slice(0, 20) + '...',
+              });
+            }
+
+            return (
+              <Message
+                key={message.id}
+                message={displayMessage}
+                isStreaming={isStreaming}
+                onEdit={handleEditMessage}
+                onRegenerate={
+                  message.role === 'assistant' &&
+                  message.id ===
+                    currentConversation.messages[
+                      currentConversation.messages.length - 1
+                    ].id &&
+                  !isStreaming
+                    ? handleRegenerate
+                    : undefined
+                }
+              />
+            );
+          })}
           {isLoading && (
             <div className="flex justify-center py-4">
               <Spin indicator={<LoaderIcon style={{ fontSize: 24 }} />} />
@@ -592,39 +705,26 @@ const ChatPage = () => {
     </div>
   );
 
-  const getPriorityColor = (priority: string) => {
-    switch (priority) {
-      case 'urgent':
-        return '#ff4d4f';
-      case 'high':
-        return '#ff7a45';
-      case 'medium':
-        return '#ffa940';
-      case 'low':
-        return '#52c41a';
-      default:
-        return '#d9d9d9';
-    }
-  };
-
-  const getStatusColor = (status: string) => {
-    switch (status) {
-      case 'active':
-        return '#52c41a';
-      case 'resolved':
-        return '#1890ff';
-      case 'archived':
-        return '#d9d9d9';
-      default:
-        return '#faad14';
-    }
-  };
-
   const renderSidebarThreads = () => (
     <div className="h-full overflow-y-auto">
       <div className="p-4 border-b border-zinc-700">
-        <h3 className="text-lg font-semibold text-white">Threads</h3>
-        <p className="text-gray-400 text-sm mt-1">Team discussions</p>
+        <div className="flex items-center justify-between mb-2">
+          <h3 className="text-lg font-semibold text-white">Threads</h3>
+          <Button
+            type="primary"
+            size="small"
+            icon={<Plus size={12} />}
+            className="bg-blue-600 hover:bg-blue-700 border-blue-600 text-xs"
+            onClick={() => {
+              // Handle new thread creation
+              console.log('Create new thread');
+            }}
+            style={{ backgroundColor: '#1890ff' }}
+          >
+            New
+          </Button>
+        </div>
+        <p className="text-gray-400 text-sm">Team discussions</p>
       </div>
 
       <div className="p-3 space-y-2 flex flex-col gap-2 items-stretch">

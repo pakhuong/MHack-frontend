@@ -15,18 +15,24 @@ interface MessageProps {
   message: MessageType;
   onEdit?: (messageId: string) => void;
   onRegenerate?: () => void;
+  isStreaming?: boolean;
 }
 
-export const Message = ({ message, onEdit, onRegenerate }: MessageProps) => {
+export const Message = ({
+  message,
+  onEdit,
+  onRegenerate,
+  isStreaming,
+}: MessageProps) => {
   const isUser = message.role === 'user';
   const navigate = useNavigate();
 
   const handleCopy = async () => {
     try {
       await navigator.clipboard.writeText(message.content);
-      message.success('Copied to clipboard');
-    } catch (err) {
-      message.error('Failed to copy');
+      // TODO: Add toast notification for success
+    } catch {
+      // TODO: Add toast notification for error
     }
   };
 
@@ -75,7 +81,12 @@ export const Message = ({ message, onEdit, onRegenerate }: MessageProps) => {
         } py-4 px-6 rounded-lg flex-col space-y-4`}
       >
         <div className="prose prose-invert max-w-none font-base text-base">
-          <ReactMarkdown>{message.content}</ReactMarkdown>
+          <div>
+            <ReactMarkdown>{message.content}</ReactMarkdown>
+            {isStreaming && (
+              <span className="inline-block w-2 h-5 bg-white ml-1 animate-pulse"></span>
+            )}
+          </div>
         </div>
 
         {/* Incident Object */}
@@ -109,7 +120,7 @@ export const Message = ({ message, onEdit, onRegenerate }: MessageProps) => {
                 </div>
 
                 <h4 className="text-white font-medium mb-2 text-sm">
-                  {message.incident.summary}
+                  {message.incident.cause || 'System Incident Detected'}
                 </h4>
 
                 <div className="flex items-center space-x-4 text-xs text-gray-400 mb-2">

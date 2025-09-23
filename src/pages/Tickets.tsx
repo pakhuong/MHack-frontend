@@ -1,22 +1,45 @@
-import { useState, type ReactNode } from 'react';
+import { useState, useEffect, type ReactNode } from 'react';
 import { ProTable } from '@ant-design/pro-components';
 import type { ProColumns } from '@ant-design/pro-components';
 import { Button, Tag, Input, Select, Empty, ConfigProvider } from 'antd';
 import enUS from 'antd/locale/en_US';
-import type { AlerIncident, TicketSeverity } from '../types/ticket';
-import { severityColors } from '../types/ticket';
+import type {
+  AlertIncidenDetail,
+  AlertIncident,
+  TicketPriority,
+  TicketSeverity,
+  TicketStatus,
+} from '../types/ticket';
+import {
+  priorityColors,
+  severityColors,
+  tagColors,
+  ticketStatusColors,
+} from '../types/ticket';
 import { Plus } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import dayjs from 'dayjs';
-const { Search } = Input;
+import React from 'react';
+import axios from 'axios';
 
+const { Search } = Input;
+import { v4 as uuidv4 } from 'uuid';
 // Mock data
-const mockData: AlerIncident[] = [
+export const mockDataDetail: AlertIncidenDetail[] = [
   {
+    _id: uuidv4(),
     incident_id: 'INC-20250918-01',
     service: 'payment-service',
-    start_time: '2025-09-18T10:05:00Z',
+    time: '2025-09-18T10:05:00Z',
     severity: 'critical',
+    status: 'OPEN',
+    priority: 'HIGH',
+    cause: 'Payment service is not working',
+    suggested_solution: 'Restart the payment service',
+    preventive_plan: 'Restart the payment service',
+    assignee: 'John Doe',
+    reporter: 'John Doe',
+    start_time: '2025-09-18T10:05:00Z',
     impact: {
       users: 5000,
       region: 'VN',
@@ -27,89 +50,63 @@ const mockData: AlerIncident[] = [
         change: '+12%',
         value: '12.3%',
       },
-      {
-        metric: 'rps',
-        change: '-3500',
-        value: '6000',
-      },
     ],
     log_clusters: ['DB_CONN_FAIL'],
-    change_event: 'deploy v1.2.0 at 10:03',
-    cause: 'DB connection pool misconfiguration after deploy',
+    change_event: 'traffic surge',
     timeline: [
       {
-        time: '2025-09-18T10:03:00Z',
-        event: 'deploy v1.2.0',
-      },
-      {
         time: '2025-09-18T10:05:00Z',
-        event: 'failure_rate_spike + DB_CONN_FAIL',
-      },
-      {
-        time: '2025-09-18T10:07:00Z',
-        event: 'incident escalated',
+        event: 'traffic surge',
       },
     ],
-    suggested_solution: 'Revert deploy v1.2.0, increase DB pool size to 500',
-    preventive_plan: 'Run DB stress test in CI/CD before deploy',
-    status: '',
-    assignee: '',
-    reporter: '',
-    priority: '',
   },
   {
-    incident_id: 'INC-20250918-01',
+    _id: uuidv4(),
+    alert_id: 'ALERT-20250918-01',
+    time: '2025-09-18T10:05:00Z',
     service: 'payment-service',
-    start_time: '2025-09-18T10:05:00Z',
-    severity: 'critical',
+    severity: 'warning',
+    status: 'OPEN',
+    priority: 'HIGH',
+    cause: 'Payment service is not working',
+    suggested_solution: 'Restart the payment service',
+    preventive_plan: 'Restart the payment service',
+    assignee: 'John Doe',
+    reporter: 'John Doe',
+    metric: {
+      name: 'failure_rate',
+      value: '12.3%',
+      baseline: '10%',
+      change: '+12%',
+    },
     impact: {
       users: 5000,
       region: 'VN',
     },
-    anomalies: [
-      {
-        metric: 'failure_rate',
-        change: '+12%',
-        value: '12.3%',
-      },
-      {
-        metric: 'rps',
-        change: '-3500',
-        value: '6000',
-      },
-    ],
-    log_clusters: ['DB_CONN_FAIL'],
-    change_event: 'deploy v1.2.0 at 10:03',
-    cause: 'DB connection pool misconfiguration after deploy',
     timeline: [
       {
-        time: '2025-09-18T10:03:00Z',
-        event: 'deploy v1.2.0',
-      },
-      {
         time: '2025-09-18T10:05:00Z',
-        event: 'failure_rate_spike + DB_CONN_FAIL',
-      },
-      {
-        time: '2025-09-18T10:07:00Z',
-        event: 'incident escalated',
+        event: 'traffic surge',
       },
     ],
-    suggested_solution: 'Revert deploy v1.2.0, increase DB pool size to 500',
-    preventive_plan: 'Run DB stress test in CI/CD before deploy',
-    status: '',
-    assignee: '',
-    reporter: '',
-    priority: '',
   },
   {
-    incident_id: 'INC-20250918-01',
-    service: 'payment-service',
-    start_time: '2025-09-18T10:05:00Z',
-    severity: 'critical',
+    _id: uuidv4(),
+    incident_id: 'INC-20250918-02',
+    service: 'user-service',
+    time: '2025-09-18T09:30:00Z',
+    severity: 'high',
+    status: 'RECOVERING',
+    priority: 'MEDIUM',
+    cause: 'User service is not working',
+    suggested_solution: 'Restart the user service',
+    preventive_plan: 'Restart the user service',
+    assignee: 'John Doe',
+    reporter: 'John Doe',
+    start_time: '2025-09-18T09:30:00Z',
     impact: {
-      users: 5000,
-      region: 'VN',
+      users: 2000,
+      region: 'US',
     },
     anomalies: [
       {
@@ -117,94 +114,285 @@ const mockData: AlerIncident[] = [
         change: '+12%',
         value: '12.3%',
       },
-      {
-        metric: 'rps',
-        change: '-3500',
-        value: '6000',
-      },
     ],
     log_clusters: ['DB_CONN_FAIL'],
-    change_event: 'deploy v1.2.0 at 10:03',
-    cause: 'DB connection pool misconfiguration after deploy',
+    change_event: 'traffic surge',
     timeline: [
       {
-        time: '2025-09-18T10:03:00Z',
-        event: 'deploy v1.2.0',
+        time: '2025-09-18T09:30:00Z',
+        event: 'traffic surge',
       },
       {
-        time: '2025-09-18T10:05:00Z',
-        event: 'failure_rate_spike + DB_CONN_FAIL',
-      },
-      {
-        time: '2025-09-18T10:07:00Z',
-        event: 'incident escalated',
+        time: '2025-09-18T09:30:00Z',
+        event: 'traffic surge',
       },
     ],
-    suggested_solution: 'Revert deploy v1.2.0, increase DB pool size to 500',
-    preventive_plan: 'Run DB stress test in CI/CD before deploy',
-    status: '',
-    assignee: '',
-    reporter: '',
-    priority: '',
   },
   {
-    incident_id: 'INC-20250918-01',
-    service: 'payment-service',
-    start_time: '2025-09-18T10:05:00Z',
-    severity: 'critical',
+    _id: uuidv4(),
+    alert_id: 'ALERT-20250918-02',
+    service: 'database-service',
+    time: '2025-09-18T08:15:00Z',
+    severity: 'medium',
+    status: 'CLOSED',
+    priority: 'LOW',
+    cause: 'Database service is not working',
+    suggested_solution: 'Restart the database service',
+    preventive_plan: 'Restart the database service',
+    assignee: 'John Doe',
+    reporter: 'John Doe',
+    metric: {
+      name: 'failure_rate',
+      value: '12.3%',
+      baseline: '10%',
+      change: '+12%',
+    },
     impact: {
       users: 5000,
       region: 'VN',
     },
-    anomalies: [
-      {
-        metric: 'failure_rate',
-        change: '+12%',
-        value: '12.3%',
-      },
-      {
-        metric: 'rps',
-        change: '-3500',
-        value: '6000',
-      },
-    ],
-    log_clusters: ['DB_CONN_FAIL'],
-    change_event: 'deploy v1.2.0 at 10:03',
-    cause: 'DB connection pool misconfiguration after deploy',
-    timeline: [
-      {
-        time: '2025-09-18T10:03:00Z',
-        event: 'deploy v1.2.0',
-      },
-      {
-        time: '2025-09-18T10:05:00Z',
-        event: 'failure_rate_spike + DB_CONN_FAIL',
-      },
-      {
-        time: '2025-09-18T10:07:00Z',
-        event: 'incident escalated',
-      },
-    ],
-    suggested_solution: 'Revert deploy v1.2.0, increase DB pool size to 500',
-    preventive_plan: 'Run DB stress test in CI/CD before deploy',
-    status: '',
-    assignee: '',
-    reporter: '',
-    priority: '',
+    timeline: [],
+  },
+  {
+    _id: uuidv4(),
+    incident_id: 'INC-20250917-01',
+    service: 'api-gateway',
+    time: '2025-09-17T16:45:00Z',
+    severity: 'critical',
+    status: 'RECOVERED',
+    priority: 'HIGH',
+    cause: 'Database service is not working',
+    suggested_solution: 'Restart the database service',
+    preventive_plan: 'Restart the database service',
+    assignee: 'John Doe',
+    reporter: 'John Doe',
+    timeline: [],
+    start_time: '2025-09-17T16:45:00Z',
+    impact: {
+      users: 2000,
+      region: 'US',
+    },
+    anomalies: [],
+    log_clusters: [],
+    change_event: 'traffic surge',
+  },
+  {
+    _id: uuidv4(),
+    alert_id: 'ALERT-20250917-01',
+    service: 'monitoring-service',
+    time: '2025-09-17T14:20:00Z',
+    severity: 'low',
+    status: 'CLOSED',
+    priority: 'LOW',
+    cause: 'Database service is not working',
+    suggested_solution: 'Restart the database service',
+    preventive_plan: 'Restart the database service',
+    assignee: 'John Doe',
+    reporter: 'John Doe',
+    metric: {
+      name: 'failure_rate',
+      value: '12.3%',
+      baseline: '10%',
+      change: '+12%',
+    },
+    impact: {
+      users: 2000,
+      region: 'US',
+    },
+    timeline: [],
   },
 ];
 
+const mockData: AlertIncident[] = mockDataDetail.map((item) => {
+  if ('incident_id' in item) {
+    return {
+      _id: item._id,
+      id: item.incident_id,
+      tag: 'incident',
+      time: item.start_time,
+      service: item.service,
+      severity: item.severity,
+      status: item.status,
+      priority: item.priority,
+    };
+  }
+  return {
+    _id: item._id,
+    id: item.alert_id,
+    tag: 'alert',
+    time: item.time,
+    service: item.service,
+    severity: item.severity,
+    status: item.status,
+    priority: item.priority,
+  };
+});
+
 const TicketPage = () => {
   const [selectedRowKeys, setSelectedRowKeys] = useState<string[]>([]);
+  const [searchText, setSearchText] = useState<string>('');
+  const [tagFilter, setTagFilter] = useState<string | undefined>(undefined);
+  const [statusFilter, setStatusFilter] = useState<string | undefined>(
+    undefined
+  );
+  const [severityFilter, setSeverityFilter] = useState<string | undefined>(
+    undefined
+  );
+  const [filteredData, setFilteredData] = useState<AlertIncident[]>(mockData);
   const navigate = useNavigate();
-  const columns: ProColumns<AlerIncident>[] = [
+
+  const [data, setData] = useState<AlertIncident[]>(mockData);
+  const [loading, setLoading] = useState<boolean>(false);
+
+  React.useEffect(() => {
+    (async () => {
+      setLoading(true);
+      console.log('loading data');
+      Promise.allSettled([
+        axios
+          .get('http://localhost:3000/incidents')
+          .then((response) => {
+            return response;
+          })
+          .catch((error) => {
+            return { status: 'rejected' };
+          }),
+        axios
+          .get('http://localhost:3000/alerts')
+          .then((response) => {
+            return response;
+          })
+          .catch((error) => {
+            return { status: 'rejected' };
+          }),
+      ])
+        .then((results) => {
+          console.log('API Results:', results);
+
+          const ticketsData =
+            results[0].status === 'fulfilled'
+              ? results[0].value.data.map(
+                  (ticket: {
+                    _id: string;
+                    incident_id: string;
+                    start_time: string;
+                    service: string;
+                    severity: string;
+                    status: string;
+                    priority: string;
+                  }) => ({
+                    _id: ticket.id,
+                    id: ticket.incident_id,
+                    time: ticket.start_time,
+                    service: ticket.service,
+                    severity: ticket.severity,
+                    status: ticket.status,
+                    priority: ticket.priority,
+                    tag: 'incident',
+                  })
+                )
+              : [];
+
+          const alertsData =
+            results[1].status === 'fulfilled'
+              ? results[1].value.data.map(
+                  (alert: {
+                    _id: string;
+                    alert_id: string;
+                    time: string;
+                    service: string;
+                    severity: string;
+                    status: string;
+                    priority: string;
+                  }) => ({
+                    _id: alert._id,
+                    id: alert.alert_id,
+                    time: alert.time,
+                    service: alert.service,
+                    severity: alert.severity,
+                    status: alert.status,
+                    priority: alert.priority,
+                    tag: 'alert',
+                  })
+                )
+              : [];
+
+          const combinedData = [...ticketsData, ...alertsData];
+
+          // If no data from APIs, use mock data
+          if (combinedData.length === 0) {
+            console.log('No data from APIs, using mock data');
+            setData(mockData);
+          } else {
+            console.log('Using API data:', combinedData.length, 'items');
+            setData(combinedData);
+          }
+        })
+        .catch((error) => {
+          console.error('Error fetching data:', error);
+          console.log('Falling back to mock data');
+          setData(mockData);
+        })
+        .finally(() => {
+          setLoading(false);
+        });
+    })();
+    // setData(mockData);
+  }, []);
+
+  // Filter data based on search and filters
+  useEffect(() => {
+    let filtered = data;
+
+    // Search filter
+    if (searchText) {
+      filtered = filtered.filter(
+        (item) =>
+          item.id.toLowerCase().includes(searchText.toLowerCase()) ||
+          item.service.toLowerCase().includes(searchText.toLowerCase())
+      );
+    }
+
+    // Tag filter
+    if (tagFilter) {
+      filtered = filtered.filter((item) => item.tag === tagFilter);
+    }
+
+    // Status filter
+    if (statusFilter) {
+      filtered = filtered.filter((item) => item.status === statusFilter);
+    }
+
+    // Severity filter
+    if (severityFilter) {
+      filtered = filtered.filter((item) => item.severity === severityFilter);
+    }
+
+    setFilteredData(filtered);
+  }, [data, searchText, tagFilter, statusFilter, severityFilter]);
+
+  const columns: ProColumns<AlertIncident>[] = [
     {
       title: 'ID',
-      dataIndex: 'incident_id',
-      key: 'incident_id',
+      dataIndex: 'id',
+      key: 'id',
+      width: 200,
+      render: (dom: ReactNode, record: AlertIncident) => (
+        <span className="text-blue-600 font-medium">{record.id}</span>
+      ),
+    },
+    {
+      title: 'TAG',
+      dataIndex: 'tag',
+      key: 'tag',
       width: 100,
-      render: (dom: ReactNode, record: AlerIncident) => (
-        <span className="text-blue-600 font-medium">{record.incident_id}</span>
+      render: (dom: ReactNode, record: AlertIncident) => (
+        <Tag
+          className={`text-white px-3 py-1 rounded-full`}
+          color={tagColors[record.tag]}
+        >
+          {record.tag}
+        </Tag>
       ),
     },
     {
@@ -212,18 +400,18 @@ const TicketPage = () => {
       dataIndex: 'service',
       key: 'service',
       width: 180,
-      render: (dom: ReactNode, record: AlerIncident) => (
+      render: (dom: ReactNode, record: AlertIncident) => (
         <span className="text-white font-bold">{record.service}</span>
       ),
     },
     {
-      title: 'START TIME',
-      dataIndex: 'start_time',
-      key: 'start_time',
+      title: 'TIME',
+      dataIndex: 'time',
+      key: 'time',
       width: 180,
-      render: (dom: ReactNode, record: AlerIncident) => (
+      render: (dom: ReactNode, record: AlertIncident) => (
         <span className="text-gray-200 font-medium">
-          {dayjs(record.start_time).format('YYYY-MM-DD HH:mm:ss')}
+          {dayjs(record.time).format('YYYY-MM-DD HH:mm:ss')}
         </span>
       ),
       sorter: true,
@@ -233,7 +421,7 @@ const TicketPage = () => {
       dataIndex: 'severity',
       key: 'severity',
       width: 120,
-      render: (dom: ReactNode, record: AlerIncident) => (
+      render: (dom: ReactNode, record: AlertIncident) => (
         <Tag
           className={`text-white px-3 py-1 rounded-full`}
           color={severityColors[record.severity as TicketSeverity]}
@@ -248,10 +436,32 @@ const TicketPage = () => {
       ],
     },
     {
-      title: 'CAUSE',
-      dataIndex: 'cause',
-      key: 'cause',
-      width: 400,
+      title: 'STATUS',
+      dataIndex: 'status',
+      key: 'status',
+      width: 120,
+      render: (dom: ReactNode, record: AlertIncident) => (
+        <Tag
+          className={`text-white px-3 py-1 rounded-full`}
+          color={ticketStatusColors[record.status as TicketStatus]}
+        >
+          {record.status}
+        </Tag>
+      ),
+    },
+    {
+      title: 'PRIORITY',
+      dataIndex: 'priority',
+      key: 'priority',
+      width: 200,
+      render: (dom: ReactNode, record: AlertIncident) => (
+        <Tag
+          className={`text-white px-3 py-1 rounded-full`}
+          color={priorityColors[record.priority as TicketPriority]}
+        >
+          {record.priority}
+        </Tag>
+      ),
     },
   ];
 
@@ -261,20 +471,38 @@ const TicketPage = () => {
       placeholder="Search incidents..."
       className="w-64"
       allowClear
+      value={searchText}
+      onChange={(e) => setSearchText(e.target.value)}
+      onSearch={(value) => setSearchText(value)}
     />,
-    // <Select
-    //   key="status"
-    //   placeholder="Status: All"
-    //   className="w-40"
-    //   allowClear
-    //   showSearch
-    //   optionFilterProp="children"
-    // >
-    //   <Select.Option value="CLOSED">CLOSED</Select.Option>
-    //   <Select.Option value="RECOVERED">RECOVERED</Select.Option>
-    //   <Select.Option value="RECOVERING">RECOVERING</Select.Option>
-    //   <Select.Option value="OPEN">OPEN</Select.Option>
-    // </Select>,
+    <Select
+      key="tag"
+      placeholder="Tag: All"
+      className="w-40"
+      allowClear
+      showSearch
+      optionFilterProp="children"
+      value={tagFilter}
+      onChange={(value) => setTagFilter(value)}
+    >
+      <Select.Option value="incident">INCIDENT</Select.Option>
+      <Select.Option value="alert">ALERT</Select.Option>
+    </Select>,
+    <Select
+      key="status"
+      placeholder="Status: All"
+      className="w-40"
+      allowClear
+      showSearch
+      optionFilterProp="children"
+      value={statusFilter}
+      onChange={(value) => setStatusFilter(value)}
+    >
+      <Select.Option value="CLOSED">CLOSED</Select.Option>
+      <Select.Option value="RECOVERED">RECOVERED</Select.Option>
+      <Select.Option value="RECOVERING">RECOVERING</Select.Option>
+      <Select.Option value="OPEN">OPEN</Select.Option>
+    </Select>,
     <Select
       key="severity"
       placeholder="Severity: All"
@@ -282,14 +510,17 @@ const TicketPage = () => {
       allowClear
       showSearch
       optionFilterProp="children"
+      value={severityFilter}
+      onChange={(value) => setSeverityFilter(value)}
     >
       <Select.Option value="critical">Critical</Select.Option>
       <Select.Option value="high">High</Select.Option>
       <Select.Option value="medium">Medium</Select.Option>
+      <Select.Option value="low">Low</Select.Option>
     </Select>,
-    // <Button key="create" type="primary" icon={<Plus color="black" />}>
-    //   <span className="text-black">Create Ticket</span>
-    // </Button>,
+    <Button key="create" type="primary" icon={<Plus color="black" />}>
+      <span className="text-black">Create Ticket</span>
+    </Button>,
   ];
 
   const customEmpty = () => (
@@ -318,13 +549,14 @@ const TicketPage = () => {
           </p>
         </div>
 
-        <ProTable<AlerIncident>
+        <ProTable<AlertIncident>
           columns={columns}
           rowKey="id"
           search={false}
           dateFormatter="string"
           // headerTitle="INCIDENT TICKET (IS)"
           toolBarRender={toolBarRender}
+          key={`table-${filteredData.length}-${searchText}-${tagFilter}-${statusFilter}-${severityFilter}`}
           locale={{
             emptyText: customEmpty(),
             selectionAll: 'Select All',
@@ -343,7 +575,11 @@ const TicketPage = () => {
           }}
           onRow={(record) => ({
             onClick: () => {
-              navigate(`/alert-incident-management/${record.incident_id}`);
+              if (record.tag === 'incident') {
+                navigate(`/alert-incident-management/incident/${record._id}`);
+              } else {
+                navigate(`/alert-incident-management/alert/${record._id}`);
+              }
             },
           })}
           pagination={{
@@ -364,13 +600,14 @@ const TicketPage = () => {
             },
           }}
           request={async () => {
-            // Simulating API call with mock data
+            // Simulating API call with filtered data
             return {
-              data: mockData,
+              data: filteredData,
               success: true,
-              total: mockData.length,
+              total: filteredData.length,
             };
           }}
+          loading={loading}
           className="bg-white rounded-lg shadow-sm"
         />
       </div>
