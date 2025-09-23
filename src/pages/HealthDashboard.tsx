@@ -15,10 +15,11 @@ import {
 } from 'antd';
 import ReactECharts from 'echarts-for-react';
 import dayjs from 'dayjs';
-import { useMemo, useEffect, useState } from 'react';
+import { useMemo, useEffect, useState, useRef } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { useRealTimeMetrics } from '../hooks/useRealTimeMetrics';
 import { Bell, AlertTriangle, ChevronDown, Clock, User } from 'lucide-react';
+import websocketService from '../services/websocketService';
 import type {
   ServiceName,
   ServiceStatus,
@@ -39,7 +40,12 @@ function statusColor(status: ServiceStatus) {
   }
 }
 
-type MetricKey = 'cpuUsage' | 'memoryUsage' | 'responseTime' | 'errorRate';
+type MetricKey =
+  | 'cpuUsage'
+  | 'memoryUsage'
+  | 'responseTime'
+  | 'errorRate'
+  | 'requestsPerSecond';
 
 function buildLineOptions(
   title: string,
@@ -48,11 +54,30 @@ function buildLineOptions(
   key: MetricKey,
   thresholds?: { warn?: number; critical?: number; yMax?: number }
 ) {
-  const series = services.map((s) => ({
+  // Define vibrant colors for better dark mode visibility
+  const lineColors = [
+    '#60a5fa', // Blue
+    '#34d399', // Emerald
+    '#fbbf24', // Amber
+    '#f87171', // Red
+    '#a78bfa', // Purple
+    '#fb7185', // Pink
+    '#4ade80', // Green
+    '#38bdf8', // Sky
+  ];
+
+  const series = services.map((s, index) => ({
     name: s,
     type: 'line',
     smooth: true as const,
     showSymbol: false,
+    lineStyle: {
+      width: 2,
+      color: lineColors[index % lineColors.length],
+    },
+    itemStyle: {
+      color: lineColors[index % lineColors.length],
+    },
     data: (seriesByService[s]?.points ?? []).map((p) => [p.timestamp, p[key]]),
   }));
 
@@ -62,42 +87,145 @@ function buildLineOptions(
       : key === 'memoryUsage'
         ? 'Memory (%)'
         : key === 'responseTime'
-          ? 'Response Time (ms)'
-          : 'Error Rate (%)';
+          ? 'Latency (ms)'
+          : key === 'requestsPerSecond'
+            ? 'Requests/sec'
+            : 'Failure Rate (%)';
 
   const markLineData: {
     yAxis: number;
-    lineStyle: { color: string };
-    label: { formatter: string };
+    lineStyle: { color: string; width: number; type: string };
+    label: {
+      formatter: string;
+      color: string;
+      backgroundColor: string;
+      borderColor: string;
+      borderRadius: number;
+      padding: number[];
+    };
   }[] = [];
   if (thresholds?.warn != null) {
     markLineData.push({
       yAxis: thresholds.warn,
-      lineStyle: { color: '#faad14' },
-      label: { formatter: 'warn' },
+      lineStyle: { color: '#faad14', width: 2, type: 'dashed' },
+      label: {
+        formatter: 'warn',
+        color: '#1f2937',
+        backgroundColor: '#faad14',
+        borderColor: '#f59e0b',
+        borderRadius: 4,
+        padding: [4, 8],
+      },
     });
   }
   if (thresholds?.critical != null) {
     markLineData.push({
       yAxis: thresholds.critical,
-      lineStyle: { color: '#ff4d4f' },
-      label: { formatter: 'critical' },
+      lineStyle: { color: '#ff4d4f', width: 2, type: 'dashed' },
+      label: {
+        formatter: 'critical',
+        color: '#ffffff',
+        backgroundColor: '#ff4d4f',
+        borderColor: '#ef4444',
+        borderRadius: 4,
+        padding: [4, 8],
+      },
     });
   }
 
   return {
-    title: { text: title, left: 'center', top: 8, textStyle: { fontSize: 14 } },
-    tooltip: { trigger: 'axis' },
-    legend: { top: 28 },
-    grid: { top: 56, left: 48, right: 16, bottom: 32 },
+    backgroundColor: 'transparent',
+    title: {
+      text: title,
+      left: 'center',
+      top: 8,
+      textStyle: {
+        fontSize: 14,
+        color: '#f5f5f5',
+        fontWeight: 'bold',
+      },
+    },
+    tooltip: {
+      trigger: 'axis',
+      backgroundColor: 'rgba(17, 24, 39, 0.95)',
+      borderColor: '#374151',
+      borderWidth: 1,
+      textStyle: {
+        color: '#f5f5f5',
+        fontSize: 12,
+      },
+      axisPointer: {
+        lineStyle: {
+          color: '#6b7280',
+        },
+      },
+    },
+    legend: {
+      top: 28,
+      textStyle: {
+        color: '#d1d5db',
+        fontSize: 12,
+      },
+      itemGap: 20,
+    },
+    grid: {
+      top: 56,
+      left: 48,
+      right: 16,
+      bottom: 32,
+      borderColor: '#374151',
+      backgroundColor: 'transparent',
+    },
     xAxis: {
       type: 'time' as const,
-      axisLabel: { formatter: (v: string) => dayjs(v).format('HH:mm') },
+      axisLabel: {
+        formatter: (v: string) => dayjs(v).format('HH:mm'),
+        color: '#9ca3af',
+        fontSize: 11,
+      },
+      axisLine: {
+        lineStyle: {
+          color: '#4b5563',
+        },
+      },
+      axisTick: {
+        lineStyle: {
+          color: '#4b5563',
+        },
+      },
+      splitLine: {
+        show: false,
+      },
     },
     yAxis: {
       type: 'value' as const,
       name: yAxisName,
+      nameTextStyle: {
+        color: '#9ca3af',
+        fontSize: 11,
+      },
       max: thresholds?.yMax,
+      axisLabel: {
+        color: '#9ca3af',
+        fontSize: 11,
+      },
+      axisLine: {
+        lineStyle: {
+          color: '#4b5563',
+        },
+      },
+      axisTick: {
+        lineStyle: {
+          color: '#4b5563',
+        },
+      },
+      splitLine: {
+        lineStyle: {
+          color: '#374151',
+          type: 'solid',
+          opacity: 0.3,
+        },
+      },
     },
     series,
     markLine:
@@ -105,6 +233,7 @@ function buildLineOptions(
         ? {
             symbol: 'none',
             data: markLineData,
+            silent: true,
           }
         : undefined,
   };
@@ -516,6 +645,11 @@ export default function HealthDashboard() {
   const [searchParams] = useSearchParams();
   type Preset = '15m' | '1h' | '6h' | '24h';
   const [preset, setPreset] = useState<Preset>('15m');
+  const [wsConnectionState, setWsConnectionState] = useState({
+    isConnected: false,
+    isConnecting: false,
+    error: null as string | null,
+  });
 
   const presetToMinutes: Record<Preset, number> = {
     '15m': 15,
@@ -539,6 +673,90 @@ export default function HealthDashboard() {
     windowMinutes: presetToMinutes[preset],
   });
 
+  // Track previous timestamps to avoid sending duplicate metrics
+  const previousTimestampsRef = useRef<Partial<Record<ServiceName, string>>>(
+    {}
+  );
+
+  // WebSocket connection management
+  useEffect(() => {
+    // Connect to WebSocket when component mounts
+    websocketService.connect();
+
+    // Subscribe to connection state changes
+    const unsubscribe = websocketService.onConnectionStateChange((state) => {
+      setWsConnectionState(state);
+    });
+
+    // Initial connection state
+    setWsConnectionState(websocketService.getConnectionState());
+
+    // Cleanup on unmount
+    return () => {
+      unsubscribe();
+      websocketService.disconnect();
+    };
+  }, []);
+
+  const visibleServices = useMemo<ServiceName[]>(() => services, [services]);
+
+  // Send metrics to WebSocket whenever seriesByService changes
+  useEffect(() => {
+    if (!wsConnectionState.isConnected) return;
+
+    // Check if we have any new data to send
+    let hasNewData = false;
+    const metricsToSend: Record<
+      string,
+      {
+        serviceName: string;
+        cpuUsage: number;
+        memoryUsage: number;
+        responseTime: number;
+        errorRate: number;
+        requestsPerSecond: number;
+        status: ServiceStatus;
+        timestamp: string;
+      }
+    > = {};
+
+    for (const serviceName of visibleServices) {
+      const series = seriesByService[serviceName];
+      if (!series?.points.length) continue;
+
+      const latestPoint = series.points[series.points.length - 1];
+      const previousTimestamp = previousTimestampsRef.current[serviceName];
+
+      // Only send if this is new data (different timestamp)
+      if (!previousTimestamp || latestPoint.timestamp !== previousTimestamp) {
+        hasNewData = true;
+        previousTimestampsRef.current[serviceName] = latestPoint.timestamp;
+
+        metricsToSend[serviceName] = {
+          serviceName,
+          cpuUsage: latestPoint.cpuUsage,
+          memoryUsage: latestPoint.memoryUsage,
+          responseTime: latestPoint.responseTime,
+          errorRate: latestPoint.errorRate,
+          requestsPerSecond: latestPoint.requestsPerSecond,
+          status: series.status,
+          timestamp: latestPoint.timestamp,
+        };
+      }
+    }
+
+    // Send metrics if we have new data
+    if (hasNewData) {
+      const metricsPayload = {
+        timestamp: new Date().toISOString(),
+        services: metricsToSend,
+      };
+
+      console.log('Sending metrics to WebSocket:', metricsPayload);
+      websocketService.sendMetric(metricsPayload);
+    }
+  }, [seriesByService, visibleServices, wsConnectionState.isConnected]);
+
   // Adjust window when preset changes
   useEffect(() => {
     const minutes = presetToMinutes[preset];
@@ -546,8 +764,6 @@ export default function HealthDashboard() {
       controls.setWindowMinutes(minutes);
     }
   }, [preset, windowMinutes, controls]);
-
-  const visibleServices = useMemo<ServiceName[]>(() => services, [services]);
 
   const lastByService = useMemo(() => {
     const obj: Record<ServiceName, HealthMetricsPoint | null> = {} as Record<
@@ -578,7 +794,7 @@ export default function HealthDashboard() {
   );
 
   const rtOptions = buildLineOptions(
-    'Response Time',
+    'Latency',
     visibleServices,
     seriesByService,
     'responseTime',
@@ -586,11 +802,18 @@ export default function HealthDashboard() {
   );
 
   const errOptions = buildLineOptions(
-    'Error Rate',
+    'Failure Rate',
     visibleServices,
     seriesByService,
     'errorRate',
-    { warn: 3, critical: 10, yMax: 100 }
+    { warn: 3, critical: 10 }
+  );
+
+  const rpsOptions = buildLineOptions(
+    'Requests per Second',
+    visibleServices,
+    seriesByService,
+    'requestsPerSecond'
   );
 
   return (
@@ -660,8 +883,17 @@ export default function HealthDashboard() {
                         />
                         <Statistic
                           title="RT"
-                          value={last?.responseTime ?? 0}
+                          value={Math.round(last?.responseTime ?? 0)}
                           suffix="ms"
+                          style={{
+                            wordBreak: 'break-word',
+                          }}
+                        />
+                        <Statistic
+                          title="RPS"
+                          value={Math.round(last?.requestsPerSecond ?? 0)}
+                          suffix="req/s"
+                          precision={1}
                           style={{
                             wordBreak: 'break-word',
                           }}
@@ -725,6 +957,19 @@ export default function HealthDashboard() {
                   notMerge
                   lazyUpdate
                   option={errOptions}
+                  style={{ height: 300 }}
+                />
+              </Card>
+            </Col>
+          </Row>
+
+          <Row gutter={[16, 16]}>
+            <Col xs={24} lg={12}>
+              <Card>
+                <ReactECharts
+                  notMerge
+                  lazyUpdate
+                  option={rpsOptions}
                   style={{ height: 300 }}
                 />
               </Card>

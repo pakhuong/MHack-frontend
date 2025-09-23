@@ -181,6 +181,7 @@ export function initMetricsSeries(
   let mem = 40 + Math.random() * 20;
   let rt = 120 + Math.random() * 80; // ms
   let err = Math.random() * 2;
+  let rps = 50 + Math.random() * 100; // requests per second
 
   for (let i = steps - 1; i >= 0; i--) {
     const t = now.subtract(i * stepSeconds, 'second').toISOString();
@@ -188,6 +189,7 @@ export function initMetricsSeries(
     mem = nextValue(mem, 5, 0.01, 8);
     rt = clamp(rt + (Math.random() - 0.5) * 40, 50, 2000);
     err = clamp(err + (Math.random() - 0.5) * 0.8, 0, 100);
+    rps = clamp(rps + (Math.random() - 0.5) * 20, 0, 500);
 
     points.push({
       timestamp: t,
@@ -195,6 +197,7 @@ export function initMetricsSeries(
       memoryUsage: Math.round(mem * 10) / 10,
       responseTime: Math.round(rt),
       errorRate: Math.round(err * 10) / 10,
+      requestsPerSecond: Math.round(rps * 10) / 10,
     });
   }
 
@@ -225,6 +228,10 @@ export function advanceMetricsSeries(
       2500
     ),
     errorRate: clamp(last.errorRate + (Math.random() - 0.5) * 1.2, 0, 100),
+    requestsPerSecond:
+      Math.round(
+        clamp(last.requestsPerSecond + (Math.random() - 0.5) * 20, 0, 500) * 10
+      ) / 10,
   };
 
   const points = [...series.points.slice(1), nextPoint];
