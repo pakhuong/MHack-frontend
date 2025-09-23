@@ -39,7 +39,12 @@ function statusColor(status: ServiceStatus) {
   }
 }
 
-type MetricKey = 'cpuUsage' | 'memoryUsage' | 'responseTime' | 'errorRate';
+type MetricKey =
+  | 'cpuUsage'
+  | 'memoryUsage'
+  | 'responseTime'
+  | 'errorRate'
+  | 'requestsPerSecond';
 
 function buildLineOptions(
   title: string,
@@ -81,8 +86,10 @@ function buildLineOptions(
       : key === 'memoryUsage'
         ? 'Memory (%)'
         : key === 'responseTime'
-          ? 'Response Time (ms)'
-          : 'Error Rate (%)';
+          ? 'Latency (ms)'
+          : key === 'requestsPerSecond'
+            ? 'Requests/sec'
+            : 'Failure Rate (%)';
 
   const markLineData: {
     yAxis: number;
@@ -699,7 +706,7 @@ export default function HealthDashboard() {
   );
 
   const rtOptions = buildLineOptions(
-    'Response Time',
+    'Latency',
     visibleServices,
     seriesByService,
     'responseTime',
@@ -707,11 +714,18 @@ export default function HealthDashboard() {
   );
 
   const errOptions = buildLineOptions(
-    'Error Rate',
+    'Failure Rate',
     visibleServices,
     seriesByService,
     'errorRate',
     { warn: 3, critical: 10 }
+  );
+
+  const rpsOptions = buildLineOptions(
+    'Requests per Second',
+    visibleServices,
+    seriesByService,
+    'requestsPerSecond'
   );
 
   return (
@@ -788,6 +802,15 @@ export default function HealthDashboard() {
                           }}
                         />
                         <Statistic
+                          title="RPS"
+                          value={Math.round(last?.requestsPerSecond ?? 0)}
+                          suffix="req/s"
+                          precision={1}
+                          style={{
+                            wordBreak: 'break-word',
+                          }}
+                        />
+                        <Statistic
                           title="Error"
                           value={last?.errorRate ?? 0}
                           suffix="%"
@@ -846,6 +869,19 @@ export default function HealthDashboard() {
                   notMerge
                   lazyUpdate
                   option={errOptions}
+                  style={{ height: 300 }}
+                />
+              </Card>
+            </Col>
+          </Row>
+
+          <Row gutter={[16, 16]}>
+            <Col xs={24} lg={12}>
+              <Card>
+                <ReactECharts
+                  notMerge
+                  lazyUpdate
+                  option={rpsOptions}
                   style={{ height: 300 }}
                 />
               </Card>

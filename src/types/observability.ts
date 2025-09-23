@@ -34,6 +34,7 @@ export interface HealthMetricsPoint {
   memoryUsage: number; // 0..100 (%)
   responseTime: number; // ms
   errorRate: number; // 0..100 (%)
+  requestsPerSecond: number; // requests/sec
 }
 
 export interface HealthMetricsSeries {
