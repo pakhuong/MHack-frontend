@@ -1,4 +1,4 @@
-import type { AlerIncident } from './ticket';
+import type { AlertIncident } from './ticket';
 
 export type MessageRole = 'user' | 'assistant';
 
@@ -7,7 +7,7 @@ export interface Message {
   role: MessageRole;
   content: string;
   timestamp: string;
-  incident?: AlerIncident;
+  report?: AlertIncident;
 }
 
 export interface Conversation {

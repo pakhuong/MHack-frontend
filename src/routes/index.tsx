@@ -60,6 +60,14 @@ export const router = createBrowserRouter([
     ),
   },
   {
+    path: '/chat/thread/:threadId',
+    element: (
+      <MainLayoutWrapper sideBarContent={<></>} pageTitle="Chat Thread">
+        <ChatPage />
+      </MainLayoutWrapper>
+    ),
+  },
+  {
     path: '/logs',
     element: (
       <MainLayoutWrapper sideBarContent={<></>} pageTitle="Log Explorer">
