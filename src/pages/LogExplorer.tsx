@@ -11,7 +11,7 @@ import {
   Tag,
 } from 'antd';
 import type { TimeRange } from '../types/observability';
-import { useRealTimeSimpleLogs } from '../hooks/useRealTimeSimpleLogs';
+import { useWebSocketLogs } from '../hooks/useWebSocketLogs';
 
 const { RangePicker } = DatePicker;
 
@@ -30,10 +30,11 @@ function download(filename: string, content: string, mime = 'text/plain') {
 }
 
 export default function LogExplorer() {
-  const { controls, filterLogs, latestTimestamp } = useRealTimeSimpleLogs({
-    initialBurst: 120,
-    intervalMs: 2000,
-  });
+  const { controls, filterLogs, latestTimestamp, connectionState, reconnect } =
+    useWebSocketLogs({
+      initialBurst: 120,
+      intervalMs: 2000,
+    });
 
   const [text, setText] = useState<string>('');
   const [regex, setRegex] = useState<boolean>(false);
@@ -147,6 +148,21 @@ export default function LogExplorer() {
               <Tag color="default">
                 Last: {dayjs(latestTimestamp).format('HH:mm:ss')}
               </Tag>
+            )}
+            {connectionState.isConnected ? (
+              <Tag color="green">WebSocket Connected</Tag>
+            ) : connectionState.isConnecting ? (
+              <Tag color="blue">Connecting...</Tag>
+            ) : connectionState.error ? (
+              <Tag
+                color="red"
+                style={{ cursor: 'pointer' }}
+                onClick={reconnect}
+              >
+                Connection Failed - Click to Retry
+              </Tag>
+            ) : (
+              <Tag color="orange">Disconnected</Tag>
             )}
           </Space>
         }
