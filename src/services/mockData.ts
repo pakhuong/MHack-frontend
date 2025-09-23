@@ -8,7 +8,9 @@ import type {
   LogLevel,
   ServiceName,
   ServiceStatus,
+  SimpleLogEntry,
 } from '../types/observability';
+import { logsSet1, logsSet2, logsSet3 } from './mockLog';
 
 export const LOG_LEVELS: LogLevel[] = ['DEBUG', 'INFO', 'WARN', 'ERROR'];
 
@@ -245,3 +247,31 @@ export function generateBurstLogs(count: number, atISO?: string): LogEntry[] {
 
 export const OBS_DEFAULT_WINDOW_MINUTES = 15;
 export const OBS_METRIC_STEP_SECONDS = 30;
+
+// Simple log generation functions
+function getAllLogEntries() {
+  return [...logsSet1, ...logsSet2, ...logsSet3];
+}
+
+export function generateRandomSimpleLog(timestampISO?: string): SimpleLogEntry {
+  const allLogs = getAllLogEntries();
+  const randomLog = randomFrom(allLogs);
+  const ts = timestampISO ?? dayjs().toISOString();
+
+  return {
+    id: uuidv4(),
+    timestamp: ts,
+    content: randomLog.content,
+  };
+}
+
+export function generateBurstSimpleLogs(
+  count: number,
+  atISO?: string
+): SimpleLogEntry[] {
+  const arr: SimpleLogEntry[] = [];
+  for (let i = 0; i < count; i++) {
+    arr.push(generateRandomSimpleLog(atISO ?? dayjs().toISOString()));
+  }
+  return arr;
+}

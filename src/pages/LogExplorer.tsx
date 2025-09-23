@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react';
+import { useMemo, useState, useRef, useEffect } from 'react';
 import dayjs from 'dayjs';
 import {
   Button,
@@ -6,75 +6,14 @@ import {
   DatePicker,
   Form,
   Input,
-  Select,
   Space,
   Switch,
-  Table,
   Tag,
-  Tooltip,
-  message,
-  Modal,
-  Collapse,
-  Descriptions,
 } from 'antd';
-import type { ColumnsType } from 'antd/es/table';
-import { DEFAULT_SERVICES } from '../types/observability';
-import type {
-  LogEntry,
-  LogLevel,
-  ServiceName,
-  TimeRange,
-} from '../types/observability';
-import { LOG_LEVELS } from '../services/mockData';
-import { useRealTimeLogs } from '../hooks/useRealTimeLogs';
+import type { TimeRange } from '../types/observability';
+import { useWebSocketLogs } from '../hooks/useWebSocketLogs';
 
 const { RangePicker } = DatePicker;
-
-type TableLog = LogEntry;
-
-function levelColor(level: LogLevel): string {
-  switch (level) {
-    case 'DEBUG':
-      return 'default';
-    case 'INFO':
-      return 'blue';
-    case 'WARN':
-      return 'orange';
-    case 'ERROR':
-      return 'red';
-    default:
-      return 'default';
-  }
-}
-
-function toCSV(rows: LogEntry[]): string {
-  const headers = ['timestamp', 'serviceName', 'level', 'message', 'context'];
-  const escape = (v: unknown) => {
-    const s =
-      typeof v === 'string'
-        ? v
-        : typeof v === 'object'
-          ? JSON.stringify(v)
-          : String(v ?? '');
-    const needsQuote = /[",\n]/.test(s);
-    return needsQuote ? `"${s.replace(/"/g, '""')}"` : s;
-  };
-  const lines = [headers.join(',')];
-  for (const r of rows) {
-    lines.push(
-      [
-        r.timestamp,
-        r.serviceName,
-        r.level,
-        r.message,
-        JSON.stringify(r.context ?? {}),
-      ]
-        .map(escape)
-        .join(',')
-    );
-  }
-  return lines.join('\n');
-}
 
 function download(filename: string, content: string, mime = 'text/plain') {
   const blob = new Blob([content], { type: mime + ';charset=utf-8' });
@@ -91,147 +30,52 @@ function download(filename: string, content: string, mime = 'text/plain') {
 }
 
 export default function LogExplorer() {
-  const { controls, filterLogs, latestTimestamp } = useRealTimeLogs({
-    initialBurst: 120,
-    intervalMs: 2000,
-  });
+  const { controls, filterLogs, latestTimestamp, connectionState, reconnect } =
+    useWebSocketLogs({
+      initialBurst: 120,
+      intervalMs: 2000,
+    });
 
-  const [services, setServices] = useState<ServiceName[]>();
-  const [levels, setLevels] = useState<LogLevel[]>();
   const [text, setText] = useState<string>('');
   const [regex, setRegex] = useState<boolean>(false);
   const [range, setRange] = useState<TimeRange | undefined>(undefined);
+  const [autoScroll, setAutoScroll] = useState<boolean>(true);
+  const [isUserScrolling, setIsUserScrolling] = useState<boolean>(false);
+
+  const logContainerRef = useRef<HTMLDivElement>(null);
 
   const filtered = useMemo(
     () =>
       filterLogs({
-        services,
-        levels,
         text,
         regex,
         timeRange: range,
       }),
-    [filterLogs, services, levels, text, regex, range]
+    [filterLogs, text, regex, range]
   );
 
-  const [ctxModal, setCtxModal] = useState<{ open: boolean; entry?: LogEntry }>(
-    {
-      open: false,
+  // Auto-scroll effect for new logs
+  useEffect(() => {
+    if (autoScroll && !isUserScrolling && logContainerRef.current) {
+      logContainerRef.current.scrollTo({
+        top: logContainerRef.current.scrollHeight,
+        behavior: 'smooth',
+      });
     }
-  );
+  }, [filtered.length, autoScroll, isUserScrolling]);
 
-  const columns: ColumnsType<TableLog> = [
-    {
-      title: 'Time',
-      dataIndex: 'timestamp',
-      key: 'timestamp',
-      width: 200,
-      render: (ts: string) => (
-        <span style={{ fontVariantNumeric: 'tabular-nums' }}>
-          {dayjs(ts).format('YYYY-MM-DD HH:mm:ss.SSS')}
-        </span>
-      ),
-      sorter: (a, b) =>
-        dayjs(a.timestamp).valueOf() - dayjs(b.timestamp).valueOf(),
-      defaultSortOrder: 'descend',
-    },
-    {
-      title: 'Service',
-      dataIndex: 'serviceName',
-      key: 'serviceName',
-      width: 160,
-      render: (s: string) => (
-        <Tooltip title="Open health dashboard for this service">
-          <a href={`/health?service=${encodeURIComponent(s)}`}>{s}</a>
-        </Tooltip>
-      ),
-    },
-    {
-      title: 'Level',
-      dataIndex: 'level',
-      key: 'level',
-      width: 110,
-      render: (level: LogLevel) => <Tag color={levelColor(level)}>{level}</Tag>,
-      filters: LOG_LEVELS.map((l) => ({ text: l, value: l })),
-      onFilter: (v, r) => r.level === v,
-    },
-    {
-      title: 'Message',
-      dataIndex: 'message',
-      key: 'message',
-      ellipsis: true,
-    },
-    {
-      title: 'Context',
-      key: 'context',
-      width: 120,
-      render: (_, record) => (
-        <Button
-          size="small"
-          onClick={() => setCtxModal({ open: true, entry: record })}
-        >
-          View
-        </Button>
-      ),
-    },
-    {
-      title: 'Copy',
-      key: 'copy',
-      width: 100,
-      render: (_, record) => (
-        <Button
-          size="small"
-          onClick={async () => {
-            try {
-              await navigator.clipboard.writeText(JSON.stringify(record));
-              message.success('Copied log line to clipboard');
-            } catch {
-              message.error('Copy failed');
-            }
-          }}
-        >
-          Copy
-        </Button>
-      ),
-    },
-  ];
-
-  const onExportJSON = () => {
-    const name = `logs_${dayjs().format('YYYYMMDD_HHmmss')}.json`;
-    download(name, JSON.stringify(filtered, null, 2), 'application/json');
-  };
-
-  const onExportCSV = () => {
-    const name = `logs_${dayjs().format('YYYYMMDD_HHmmss')}.csv`;
-    download(name, toCSV(filtered), 'text/csv');
+  const onExportText = () => {
+    const name = `logs_${dayjs().format('YYYYMMDD_HHmmss')}.txt`;
+    const content = filtered
+      .map((log) => `${log.timestamp} ${log.content}`)
+      .join('\n');
+    download(name, content, 'text/plain');
   };
 
   return (
     <Space direction="vertical" size={16} style={{ display: 'flex' }}>
       <Card>
         <Form layout="inline" style={{ rowGap: 12 }}>
-          <Form.Item label="Services">
-            <Select<ServiceName[]>
-              mode="multiple"
-              allowClear
-              placeholder="Select services"
-              style={{ minWidth: 240 }}
-              value={services}
-              onChange={(v) => setServices(v)}
-              options={DEFAULT_SERVICES.map((s) => ({ label: s, value: s }))}
-            />
-          </Form.Item>
-          <Form.Item label="Levels">
-            <Select<LogLevel[]>
-              mode="multiple"
-              allowClear
-              placeholder="Select levels"
-              style={{ minWidth: 220 }}
-              value={levels}
-              onChange={(v) => setLevels(v)}
-              options={LOG_LEVELS.map((l) => ({ label: l, value: l }))}
-            />
-          </Form.Item>
           <Form.Item label="Time Range">
             <RangePicker
               showTime
@@ -259,6 +103,24 @@ export default function LogExplorer() {
           <Form.Item label="Regex">
             <Switch checked={regex} onChange={setRegex} />
           </Form.Item>
+          <Form.Item label="Auto Scroll">
+            <Switch
+              checked={autoScroll && !isUserScrolling}
+              onChange={(checked) => {
+                setAutoScroll(checked);
+                if (checked) {
+                  setIsUserScrolling(false);
+                  // Force scroll to bottom when enabled
+                  setTimeout(() => {
+                    if (logContainerRef.current) {
+                      logContainerRef.current.scrollTop =
+                        logContainerRef.current.scrollHeight;
+                    }
+                  }, 0);
+                }
+              }}
+            />
+          </Form.Item>
           <Form.Item>
             <Space>
               {controls.isPaused ? (
@@ -271,8 +133,7 @@ export default function LogExplorer() {
               <Button danger onClick={controls.clear}>
                 Clear
               </Button>
-              <Button onClick={onExportJSON}>Export JSON</Button>
-              <Button onClick={onExportCSV}>Export CSV</Button>
+              <Button onClick={onExportText}>Export Text</Button>
             </Space>
           </Form.Item>
         </Form>
@@ -282,141 +143,78 @@ export default function LogExplorer() {
         title={
           <Space>
             <span>Live Logs</span>
-            <Tag>{filtered.length} rows</Tag>
+            <Tag>{filtered.length} logs</Tag>
             {latestTimestamp && (
               <Tag color="default">
                 Last: {dayjs(latestTimestamp).format('HH:mm:ss')}
               </Tag>
             )}
+            {connectionState.isConnected ? (
+              <Tag color="green">WebSocket Connected</Tag>
+            ) : connectionState.isConnecting ? (
+              <Tag color="blue">Connecting...</Tag>
+            ) : connectionState.error ? (
+              <Tag
+                color="red"
+                style={{ cursor: 'pointer' }}
+                onClick={reconnect}
+              >
+                Connection Failed - Click to Retry
+              </Tag>
+            ) : (
+              <Tag color="orange">Disconnected</Tag>
+            )}
           </Space>
         }
-        styles={{ body: { padding: 0 } }}
+        styles={{ body: { padding: 16 } }}
       >
-        <Table<TableLog>
-          rowKey="id"
-          size="small"
-          dataSource={filtered.slice(-2000)} // keep table manageable
-          columns={columns}
-          pagination={{ pageSize: 25, showSizeChanger: true }}
-          sticky
-        />
+        <div
+          ref={logContainerRef}
+          onScroll={(e) => {
+            const { scrollTop, scrollHeight, clientHeight } = e.currentTarget;
+            const isAtBottom = scrollTop + clientHeight >= scrollHeight - 10; // 10px tolerance
+
+            if (!isAtBottom && autoScroll) {
+              // User scrolled up, temporarily disable auto-scroll
+              setIsUserScrolling(true);
+            } else if (isAtBottom && isUserScrolling) {
+              // User scrolled back to bottom, re-enable auto-scroll
+              setIsUserScrolling(false);
+            }
+          }}
+          style={{
+            fontFamily: 'Monaco, "Lucida Console", monospace',
+            fontSize: '12px',
+            lineHeight: '1.4',
+            backgroundColor: '#1e1e1e',
+            color: '#d4d4d4',
+            padding: '12px',
+            borderRadius: '4px',
+            maxHeight: '600px',
+            overflowY: 'auto',
+            whiteSpace: 'pre-wrap',
+            wordBreak: 'break-word',
+          }}
+        >
+          {filtered.slice(-1000).map((log, index) => (
+            <div
+              key={log.id}
+              style={{
+                marginBottom: '2px',
+                padding: '1px 0',
+                borderLeft:
+                  index % 2 === 0 ? '2px solid #333' : '2px solid transparent',
+                paddingLeft: '6px',
+              }}
+            >
+              <span style={{ color: '#569cd6', fontWeight: 'normal' }}>
+                {dayjs(log.timestamp).format('YYYY-MM-DD HH:mm:ss.SSS')}
+              </span>
+              <span style={{ marginLeft: '8px' }}>{log.content}</span>
+            </div>
+          ))}
+        </div>
       </Card>
-
-      <Modal
-        title="Log Context"
-        open={ctxModal.open}
-        onCancel={() => setCtxModal({ open: false })}
-        footer={
-          <Button onClick={() => setCtxModal({ open: false })}>Close</Button>
-        }
-        width={820}
-      >
-        {ctxModal.entry ? (
-          <Space direction="vertical" style={{ width: '100%' }} size={12}>
-            <Descriptions bordered size="small" column={1}>
-              <Descriptions.Item label="Timestamp">
-                <span style={{ fontVariantNumeric: 'tabular-nums' }}>
-                  {dayjs(ctxModal.entry.timestamp).format(
-                    'YYYY-MM-DD HH:mm:ss.SSS'
-                  )}
-                </span>
-              </Descriptions.Item>
-              <Descriptions.Item label="Service">
-                {ctxModal.entry.serviceName}
-              </Descriptions.Item>
-              <Descriptions.Item label="Level">
-                <Tag color={levelColor(ctxModal.entry.level)}>
-                  {ctxModal.entry.level}
-                </Tag>
-              </Descriptions.Item>
-              <Descriptions.Item label="Message">
-                <code>{ctxModal.entry.message}</code>
-              </Descriptions.Item>
-              {ctxModal.entry.context?.requestUrl && (
-                <Descriptions.Item label="Request URL">
-                  <code>{ctxModal.entry.context.requestUrl}</code>
-                </Descriptions.Item>
-              )}
-            </Descriptions>
-
-            <Collapse
-              items={[
-                {
-                  key: 'req',
-                  label: 'Request Body',
-                  children: (
-                    <pre
-                      style={{
-                        background: '#0b1021',
-                        color: '#d6deeb',
-                        padding: 12,
-                        borderRadius: 6,
-                        maxHeight: 260,
-                        overflow: 'auto',
-                        fontSize: 12,
-                      }}
-                    >
-                      {JSON.stringify(
-                        ctxModal.entry.context?.requestBody ?? {},
-                        null,
-                        2
-                      )}
-                    </pre>
-                  ),
-                },
-                {
-                  key: 'res',
-                  label: 'Response',
-                  children: (
-                    <pre
-                      style={{
-                        background: '#0b1021',
-                        color: '#d6deeb',
-                        padding: 12,
-                        borderRadius: 6,
-                        maxHeight: 260,
-                        overflow: 'auto',
-                        fontSize: 12,
-                      }}
-                    >
-                      {JSON.stringify(
-                        ctxModal.entry.context?.response ?? {},
-                        null,
-                        2
-                      )}
-                    </pre>
-                  ),
-                },
-              ]}
-            />
-
-            <Descriptions bordered size="small" column={2}>
-              {ctxModal.entry.context?.userId && (
-                <Descriptions.Item label="User ID">
-                  {String(ctxModal.entry.context.userId)}
-                </Descriptions.Item>
-              )}
-              {ctxModal.entry.context?.sessionId && (
-                <Descriptions.Item label="Session ID">
-                  {String(ctxModal.entry.context.sessionId)}
-                </Descriptions.Item>
-              )}
-              {ctxModal.entry.context?.traceId && (
-                <Descriptions.Item label="Trace ID">
-                  <code>{String(ctxModal.entry.context.traceId)}</code>
-                </Descriptions.Item>
-              )}
-              {ctxModal.entry.context?.spanId && (
-                <Descriptions.Item label="Span ID">
-                  <code>{String(ctxModal.entry.context.spanId)}</code>
-                </Descriptions.Item>
-              )}
-            </Descriptions>
-          </Space>
-        ) : (
-          <div>No context</div>
-        )}
-      </Modal>
     </Space>
   );
 }
