@@ -48,11 +48,30 @@ function buildLineOptions(
   key: MetricKey,
   thresholds?: { warn?: number; critical?: number; yMax?: number }
 ) {
-  const series = services.map((s) => ({
+  // Define vibrant colors for better dark mode visibility
+  const lineColors = [
+    '#60a5fa', // Blue
+    '#34d399', // Emerald
+    '#fbbf24', // Amber
+    '#f87171', // Red
+    '#a78bfa', // Purple
+    '#fb7185', // Pink
+    '#4ade80', // Green
+    '#38bdf8', // Sky
+  ];
+
+  const series = services.map((s, index) => ({
     name: s,
     type: 'line',
     smooth: true as const,
     showSymbol: false,
+    lineStyle: {
+      width: 2,
+      color: lineColors[index % lineColors.length],
+    },
+    itemStyle: {
+      color: lineColors[index % lineColors.length],
+    },
     data: (seriesByService[s]?.points ?? []).map((p) => [p.timestamp, p[key]]),
   }));
 
@@ -67,37 +86,138 @@ function buildLineOptions(
 
   const markLineData: {
     yAxis: number;
-    lineStyle: { color: string };
-    label: { formatter: string };
+    lineStyle: { color: string; width: number; type: string };
+    label: {
+      formatter: string;
+      color: string;
+      backgroundColor: string;
+      borderColor: string;
+      borderRadius: number;
+      padding: number[];
+    };
   }[] = [];
   if (thresholds?.warn != null) {
     markLineData.push({
       yAxis: thresholds.warn,
-      lineStyle: { color: '#faad14' },
-      label: { formatter: 'warn' },
+      lineStyle: { color: '#faad14', width: 2, type: 'dashed' },
+      label: {
+        formatter: 'warn',
+        color: '#1f2937',
+        backgroundColor: '#faad14',
+        borderColor: '#f59e0b',
+        borderRadius: 4,
+        padding: [4, 8],
+      },
     });
   }
   if (thresholds?.critical != null) {
     markLineData.push({
       yAxis: thresholds.critical,
-      lineStyle: { color: '#ff4d4f' },
-      label: { formatter: 'critical' },
+      lineStyle: { color: '#ff4d4f', width: 2, type: 'dashed' },
+      label: {
+        formatter: 'critical',
+        color: '#ffffff',
+        backgroundColor: '#ff4d4f',
+        borderColor: '#ef4444',
+        borderRadius: 4,
+        padding: [4, 8],
+      },
     });
   }
 
   return {
-    title: { text: title, left: 'center', top: 8, textStyle: { fontSize: 14 } },
-    tooltip: { trigger: 'axis' },
-    legend: { top: 28 },
-    grid: { top: 56, left: 48, right: 16, bottom: 32 },
+    backgroundColor: 'transparent',
+    title: {
+      text: title,
+      left: 'center',
+      top: 8,
+      textStyle: {
+        fontSize: 14,
+        color: '#f5f5f5',
+        fontWeight: 'bold',
+      },
+    },
+    tooltip: {
+      trigger: 'axis',
+      backgroundColor: 'rgba(17, 24, 39, 0.95)',
+      borderColor: '#374151',
+      borderWidth: 1,
+      textStyle: {
+        color: '#f5f5f5',
+        fontSize: 12,
+      },
+      axisPointer: {
+        lineStyle: {
+          color: '#6b7280',
+        },
+      },
+    },
+    legend: {
+      top: 28,
+      textStyle: {
+        color: '#d1d5db',
+        fontSize: 12,
+      },
+      itemGap: 20,
+    },
+    grid: {
+      top: 56,
+      left: 48,
+      right: 16,
+      bottom: 32,
+      borderColor: '#374151',
+      backgroundColor: 'transparent',
+    },
     xAxis: {
       type: 'time' as const,
-      axisLabel: { formatter: (v: string) => dayjs(v).format('HH:mm') },
+      axisLabel: {
+        formatter: (v: string) => dayjs(v).format('HH:mm'),
+        color: '#9ca3af',
+        fontSize: 11,
+      },
+      axisLine: {
+        lineStyle: {
+          color: '#4b5563',
+        },
+      },
+      axisTick: {
+        lineStyle: {
+          color: '#4b5563',
+        },
+      },
+      splitLine: {
+        show: false,
+      },
     },
     yAxis: {
       type: 'value' as const,
       name: yAxisName,
+      nameTextStyle: {
+        color: '#9ca3af',
+        fontSize: 11,
+      },
       max: thresholds?.yMax,
+      axisLabel: {
+        color: '#9ca3af',
+        fontSize: 11,
+      },
+      axisLine: {
+        lineStyle: {
+          color: '#4b5563',
+        },
+      },
+      axisTick: {
+        lineStyle: {
+          color: '#4b5563',
+        },
+      },
+      splitLine: {
+        lineStyle: {
+          color: '#374151',
+          type: 'solid',
+          opacity: 0.3,
+        },
+      },
     },
     series,
     markLine:
@@ -105,6 +225,7 @@ function buildLineOptions(
         ? {
             symbol: 'none',
             data: markLineData,
+            silent: true,
           }
         : undefined,
   };
@@ -590,7 +711,7 @@ export default function HealthDashboard() {
     visibleServices,
     seriesByService,
     'errorRate',
-    { warn: 3, critical: 10, yMax: 100 }
+    { warn: 3, critical: 10 }
   );
 
   return (
@@ -660,7 +781,7 @@ export default function HealthDashboard() {
                         />
                         <Statistic
                           title="RT"
-                          value={last?.responseTime ?? 0}
+                          value={Math.round(last?.responseTime ?? 0)}
                           suffix="ms"
                           style={{
                             wordBreak: 'break-word',
