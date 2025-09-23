@@ -4,7 +4,6 @@ import type { ProColumns } from '@ant-design/pro-components';
 import { Button, Tag, Input, Select, Empty, ConfigProvider } from 'antd';
 import enUS from 'antd/locale/en_US';
 import type {
-  AlertIncidenDetail,
   AlertIncident,
   TicketPriority,
   TicketSeverity,
@@ -25,208 +24,208 @@ import axios from 'axios';
 const { Search } = Input;
 import { v4 as uuidv4 } from 'uuid';
 // Mock data
-export const mockDataDetail: AlertIncidenDetail[] = [
-  {
-    _id: uuidv4(),
-    incident_id: 'INC-20250918-01',
-    service: 'payment-service',
-    time: '2025-09-18T10:05:00Z',
-    severity: 'critical',
-    status: 'OPEN',
-    priority: 'HIGH',
-    cause: 'Payment service is not working',
-    suggested_solution: 'Restart the payment service',
-    preventive_plan: 'Restart the payment service',
-    assignee: 'John Doe',
-    reporter: 'John Doe',
-    start_time: '2025-09-18T10:05:00Z',
-    impact: {
-      users: 5000,
-      region: 'VN',
-    },
-    anomalies: [
-      {
-        metric: 'failure_rate',
-        change: '+12%',
-        value: '12.3%',
-      },
-    ],
-    log_clusters: ['DB_CONN_FAIL'],
-    change_event: 'traffic surge',
-    timeline: [
-      {
-        time: '2025-09-18T10:05:00Z',
-        event: 'traffic surge',
-      },
-    ],
-  },
-  {
-    _id: uuidv4(),
-    alert_id: 'ALERT-20250918-01',
-    time: '2025-09-18T10:05:00Z',
-    service: 'payment-service',
-    severity: 'warning',
-    status: 'OPEN',
-    priority: 'HIGH',
-    cause: 'Payment service is not working',
-    suggested_solution: 'Restart the payment service',
-    preventive_plan: 'Restart the payment service',
-    assignee: 'John Doe',
-    reporter: 'John Doe',
-    metric: {
-      name: 'failure_rate',
-      value: '12.3%',
-      baseline: '10%',
-      change: '+12%',
-    },
-    impact: {
-      users: 5000,
-      region: 'VN',
-    },
-    timeline: [
-      {
-        time: '2025-09-18T10:05:00Z',
-        event: 'traffic surge',
-      },
-    ],
-  },
-  {
-    _id: uuidv4(),
-    incident_id: 'INC-20250918-02',
-    service: 'user-service',
-    time: '2025-09-18T09:30:00Z',
-    severity: 'high',
-    status: 'RECOVERING',
-    priority: 'MEDIUM',
-    cause: 'User service is not working',
-    suggested_solution: 'Restart the user service',
-    preventive_plan: 'Restart the user service',
-    assignee: 'John Doe',
-    reporter: 'John Doe',
-    start_time: '2025-09-18T09:30:00Z',
-    impact: {
-      users: 2000,
-      region: 'US',
-    },
-    anomalies: [
-      {
-        metric: 'failure_rate',
-        change: '+12%',
-        value: '12.3%',
-      },
-    ],
-    log_clusters: ['DB_CONN_FAIL'],
-    change_event: 'traffic surge',
-    timeline: [
-      {
-        time: '2025-09-18T09:30:00Z',
-        event: 'traffic surge',
-      },
-      {
-        time: '2025-09-18T09:30:00Z',
-        event: 'traffic surge',
-      },
-    ],
-  },
-  {
-    _id: uuidv4(),
-    alert_id: 'ALERT-20250918-02',
-    service: 'database-service',
-    time: '2025-09-18T08:15:00Z',
-    severity: 'medium',
-    status: 'CLOSED',
-    priority: 'LOW',
-    cause: 'Database service is not working',
-    suggested_solution: 'Restart the database service',
-    preventive_plan: 'Restart the database service',
-    assignee: 'John Doe',
-    reporter: 'John Doe',
-    metric: {
-      name: 'failure_rate',
-      value: '12.3%',
-      baseline: '10%',
-      change: '+12%',
-    },
-    impact: {
-      users: 5000,
-      region: 'VN',
-    },
-    timeline: [],
-  },
-  {
-    _id: uuidv4(),
-    incident_id: 'INC-20250917-01',
-    service: 'api-gateway',
-    time: '2025-09-17T16:45:00Z',
-    severity: 'critical',
-    status: 'RECOVERED',
-    priority: 'HIGH',
-    cause: 'Database service is not working',
-    suggested_solution: 'Restart the database service',
-    preventive_plan: 'Restart the database service',
-    assignee: 'John Doe',
-    reporter: 'John Doe',
-    timeline: [],
-    start_time: '2025-09-17T16:45:00Z',
-    impact: {
-      users: 2000,
-      region: 'US',
-    },
-    anomalies: [],
-    log_clusters: [],
-    change_event: 'traffic surge',
-  },
-  {
-    _id: uuidv4(),
-    alert_id: 'ALERT-20250917-01',
-    service: 'monitoring-service',
-    time: '2025-09-17T14:20:00Z',
-    severity: 'low',
-    status: 'CLOSED',
-    priority: 'LOW',
-    cause: 'Database service is not working',
-    suggested_solution: 'Restart the database service',
-    preventive_plan: 'Restart the database service',
-    assignee: 'John Doe',
-    reporter: 'John Doe',
-    metric: {
-      name: 'failure_rate',
-      value: '12.3%',
-      baseline: '10%',
-      change: '+12%',
-    },
-    impact: {
-      users: 2000,
-      region: 'US',
-    },
-    timeline: [],
-  },
-];
+// export const mockDataDetail: AlertIncidenDetail[] = [
+//   {
+//     _id: uuidv4(),
+//     incident_id: 'INC-20250918-01',
+//     service: 'payment-service',
+//     time: '2025-09-18T10:05:00Z',
+//     severity: 'critical',
+//     status: 'OPEN',
+//     priority: 'HIGH',
+//     cause: 'Payment service is not working',
+//     suggested_solution: 'Restart the payment service',
+//     preventive_plan: 'Restart the payment service',
+//     assignee: 'John Doe',
+//     reporter: 'John Doe',
+//     start_time: '2025-09-18T10:05:00Z',
+//     impact: {
+//       users: 5000,
+//       region: 'VN',
+//     },
+//     anomalies: [
+//       {
+//         metric: 'failure_rate',
+//         change: '+12%',
+//         value: '12.3%',
+//       },
+//     ],
+//     log_clusters: ['DB_CONN_FAIL'],
+//     change_event: 'traffic surge',
+//     timeline: [
+//       {
+//         time: '2025-09-18T10:05:00Z',
+//         event: 'traffic surge',
+//       },
+//     ],
+//   },
+//   {
+//     _id: uuidv4(),
+//     alert_id: 'ALERT-20250918-01',
+//     time: '2025-09-18T10:05:00Z',
+//     service: 'payment-service',
+//     severity: 'warning',
+//     status: 'OPEN',
+//     priority: 'HIGH',
+//     cause: 'Payment service is not working',
+//     suggested_solution: 'Restart the payment service',
+//     preventive_plan: 'Restart the payment service',
+//     assignee: 'John Doe',
+//     reporter: 'John Doe',
+//     metric: {
+//       name: 'failure_rate',
+//       value: '12.3%',
+//       baseline: '10%',
+//       change: '+12%',
+//     },
+//     impact: {
+//       users: 5000,
+//       region: 'VN',
+//     },
+//     timeline: [
+//       {
+//         time: '2025-09-18T10:05:00Z',
+//         event: 'traffic surge',
+//       },
+//     ],
+//   },
+//   {
+//     _id: uuidv4(),
+//     incident_id: 'INC-20250918-02',
+//     service: 'user-service',
+//     time: '2025-09-18T09:30:00Z',
+//     severity: 'high',
+//     status: 'RECOVERING',
+//     priority: 'MEDIUM',
+//     cause: 'User service is not working',
+//     suggested_solution: 'Restart the user service',
+//     preventive_plan: 'Restart the user service',
+//     assignee: 'John Doe',
+//     reporter: 'John Doe',
+//     start_time: '2025-09-18T09:30:00Z',
+//     impact: {
+//       users: 2000,
+//       region: 'US',
+//     },
+//     anomalies: [
+//       {
+//         metric: 'failure_rate',
+//         change: '+12%',
+//         value: '12.3%',
+//       },
+//     ],
+//     log_clusters: ['DB_CONN_FAIL'],
+//     change_event: 'traffic surge',
+//     timeline: [
+//       {
+//         time: '2025-09-18T09:30:00Z',
+//         event: 'traffic surge',
+//       },
+//       {
+//         time: '2025-09-18T09:30:00Z',
+//         event: 'traffic surge',
+//       },
+//     ],
+//   },
+//   {
+//     _id: uuidv4(),
+//     alert_id: 'ALERT-20250918-02',
+//     service: 'database-service',
+//     time: '2025-09-18T08:15:00Z',
+//     severity: 'medium',
+//     status: 'CLOSED',
+//     priority: 'LOW',
+//     cause: 'Database service is not working',
+//     suggested_solution: 'Restart the database service',
+//     preventive_plan: 'Restart the database service',
+//     assignee: 'John Doe',
+//     reporter: 'John Doe',
+//     metric: {
+//       name: 'failure_rate',
+//       value: '12.3%',
+//       baseline: '10%',
+//       change: '+12%',
+//     },
+//     impact: {
+//       users: 5000,
+//       region: 'VN',
+//     },
+//     timeline: [],
+//   },
+//   {
+//     _id: uuidv4(),
+//     incident_id: 'INC-20250917-01',
+//     service: 'api-gateway',
+//     time: '2025-09-17T16:45:00Z',
+//     severity: 'critical',
+//     status: 'RECOVERED',
+//     priority: 'HIGH',
+//     cause: 'Database service is not working',
+//     suggested_solution: 'Restart the database service',
+//     preventive_plan: 'Restart the database service',
+//     assignee: 'John Doe',
+//     reporter: 'John Doe',
+//     timeline: [],
+//     start_time: '2025-09-17T16:45:00Z',
+//     impact: {
+//       users: 2000,
+//       region: 'US',
+//     },
+//     anomalies: [],
+//     log_clusters: [],
+//     change_event: 'traffic surge',
+//   },
+//   {
+//     _id: uuidv4(),
+//     alert_id: 'ALERT-20250917-01',
+//     service: 'monitoring-service',
+//     time: '2025-09-17T14:20:00Z',
+//     severity: 'low',
+//     status: 'CLOSED',
+//     priority: 'LOW',
+//     cause: 'Database service is not working',
+//     suggested_solution: 'Restart the database service',
+//     preventive_plan: 'Restart the database service',
+//     assignee: 'John Doe',
+//     reporter: 'John Doe',
+//     metric: {
+//       name: 'failure_rate',
+//       value: '12.3%',
+//       baseline: '10%',
+//       change: '+12%',
+//     },
+//     impact: {
+//       users: 2000,
+//       region: 'US',
+//     },
+//     timeline: [],
+//   },
+// ];
 
-const mockData: AlertIncident[] = mockDataDetail.map((item) => {
-  if ('incident_id' in item) {
-    return {
-      _id: item._id,
-      id: item.incident_id,
-      tag: 'incident',
-      time: item.start_time,
-      service: item.service,
-      severity: item.severity,
-      status: item.status,
-      priority: item.priority,
-    };
-  }
-  return {
-    _id: item._id,
-    id: item.alert_id,
-    tag: 'alert',
-    time: item.time,
-    service: item.service,
-    severity: item.severity,
-    status: item.status,
-    priority: item.priority,
-  };
-});
+// const mockData: AlertIncident[] = mockDataDetail.map((item) => {
+//   if ('incident_id' in item) {
+//     return {
+//       _id: item._id,
+//       id: item.incident_id,
+//       tag: 'incident',
+//       time: item.start_time,
+//       service: item.service,
+//       severity: item.severity,
+//       status: item.status,
+//       priority: item.priority,
+//     };
+//   }
+//   return {
+//     _id: item._id,
+//     id: item.alert_id,
+//     tag: 'alert',
+//     time: item.time,
+//     service: item.service,
+//     severity: item.severity,
+//     status: item.status,
+//     priority: item.priority,
+//   };
+// });
 
 const TicketPage = () => {
   const [selectedRowKeys, setSelectedRowKeys] = useState<string[]>([]);
@@ -238,16 +237,16 @@ const TicketPage = () => {
   const [severityFilter, setSeverityFilter] = useState<string | undefined>(
     undefined
   );
-  const [filteredData, setFilteredData] = useState<AlertIncident[]>(mockData);
+  const [filteredData, setFilteredData] = useState<AlertIncident[]>([]);
   const navigate = useNavigate();
 
-  const [data, setData] = useState<AlertIncident[]>(mockData);
+  const [data, setData] = useState<AlertIncident[]>([]);
   const [loading, setLoading] = useState<boolean>(false);
 
   React.useEffect(() => {
     (async () => {
       setLoading(true);
-      console.log('loading data');
+      setData([]);
       Promise.allSettled([
         axios
           .get('http://localhost:3000/incidents')
@@ -319,19 +318,12 @@ const TicketPage = () => {
 
           const combinedData = [...ticketsData, ...alertsData];
 
-          // If no data from APIs, use mock data
-          if (combinedData.length === 0) {
-            console.log('No data from APIs, using mock data');
-            setData(mockData);
-          } else {
-            console.log('Using API data:', combinedData.length, 'items');
-            setData(combinedData);
-          }
+          setData(combinedData);
         })
         .catch((error) => {
           console.error('Error fetching data:', error);
           console.log('Falling back to mock data');
-          setData(mockData);
+          setData([]);
         })
         .finally(() => {
           setLoading(false);
@@ -528,10 +520,7 @@ const TicketPage = () => {
       image={Empty.PRESENTED_IMAGE_SIMPLE}
       description={
         <div className="text-center">
-          <p className="text-gray-500 mb-4">No tickets found</p>
-          <Button type="primary" icon={<Plus color="black" />}>
-            <span className="text-black">Create New Ticket</span>
-          </Button>
+          <p className="text-gray-500 mb-4">No incidents/alerts found</p>
         </div>
       }
     />

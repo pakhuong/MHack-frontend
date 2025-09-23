@@ -28,7 +28,6 @@ import type { AlertIncidenDetail } from '../types/ticket';
 import axios from 'axios';
 import React from 'react';
 import { useParams } from 'react-router-dom';
-import { mockDataDetail } from './Tickets';
 
 // Mock data for users
 const mockUsers = [
@@ -70,7 +69,7 @@ export default function TicketDetail({
         setIncident(response.data);
       } catch (error) {
         console.error(`Failed to fetch ${tag} details:`, error);
-        setIncident(mockDataDetail.find((item) => item._id === id) ?? null);
+        setIncident(null);
         // setIncident(null);
       } finally {
         setLoading(false);
