@@ -20,6 +20,12 @@ export interface LogEntry {
   context: LogContext;
 }
 
+export interface SimpleLogEntry {
+  id: string;
+  timestamp: string; // ISO string
+  content: string; // Raw log content
+}
+
 export type ServiceStatus = 'healthy' | 'warning' | 'critical';
 
 export interface HealthMetricsPoint {
