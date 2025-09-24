@@ -392,8 +392,8 @@ export default function TicketDetail({
                           )}
                         </div>
                         <div className="flex-1">
-                          <p className="text-white font-medium">
-                            {event.event}
+                          <p className="text-white font-medium whitespace-pre-line">
+                            {event.event.replaceAll('|', '\n')}
                           </p>
                           <p className="text-gray-400 text-sm">
                             {formatDateTime(event.time)}
@@ -412,16 +412,16 @@ export default function TicketDetail({
                 <CardHeader>
                   <CardTitle className="flex items-center text-white">
                     <CheckCircle className="w-5 h-5 mr-2 text-green-500" />
-                    Resolution
+                    Suggested Solution
                   </CardTitle>
                 </CardHeader>
                 <CardContent>
                   <div className="space-y-4">
                     <div className=" flex flex-col gap-2">
-                      <p className="text-sm font-medium text-gray-400 mb-2">
+                      <p className="text-sm font-medium text-gray-400 mb-2 whitespace-pre-line">
                         Suggested Solution
                       </p>
-                      <p className="text-gray-200 text-sm bg-zinc-800 p-3 rounded-lg">
+                      <p className="text-gray-200 text-sm bg-zinc-800 p-3 rounded-lg whitespace-pre-line">
                         {incident.suggested_solution}
                       </p>
                     </div>
@@ -429,7 +429,7 @@ export default function TicketDetail({
                       <p className="text-sm font-medium text-gray-400 mb-2">
                         Preventive Plan
                       </p>
-                      <p className="text-gray-200 text-sm bg-zinc-800 p-3 rounded-lg">
+                      <p className="text-gray-200 text-sm bg-zinc-800 p-3 rounded-lg whitespace-pre-line">
                         {incident.preventive_plan}
                       </p>
                     </div>
@@ -802,8 +802,20 @@ export default function TicketDetail({
                           <p className="text-sm font-medium text-gray-400 mb-1">
                             Identified Cause
                           </p>
-                          <p className="text-gray-200 text-sm">
-                            {incident.cause}
+                          <p className="text-gray-200 text-sm whitespace-pre-line">
+                            {incident.cause.split('\n').map((line, i) => {
+                              const [label, ...rest] = line.split(':');
+                              const content = rest.join(':').trim();
+
+                              return (
+                                <div key={i}>
+                                  <strong className="font-semibold text-white">
+                                    {label}:
+                                  </strong>{' '}
+                                  <span>{content}</span>
+                                </div>
+                              );
+                            })}
                           </p>
                         </div>
                       )}
