@@ -370,11 +370,11 @@ const TicketPage = () => {
       key: 'id',
       width: 200,
       render: (dom: ReactNode, record: AlertIncident) => (
-        <span className="text-blue-600 font-medium">{record.id}</span>
+        <span className="text-white font-medium">{record.id}</span>
       ),
     },
     {
-      title: 'TAG',
+      title: 'TYPE',
       dataIndex: 'tag',
       key: 'tag',
       width: 100,

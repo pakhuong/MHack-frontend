@@ -30,7 +30,7 @@ function download(filename: string, content: string, mime = 'text/plain') {
 }
 
 export default function LogExplorer() {
-  const { controls, filterLogs, latestTimestamp, connectionState, reconnect } =
+  const { controls, filterLogs, latestTimestamp, connectionState, reconnect, generateIncidentLog } =
     useWebSocketLogs({
       initialBurst: 120,
       intervalMs: 2000,
@@ -164,6 +164,9 @@ export default function LogExplorer() {
             ) : (
               <Tag color="orange">Disconnected</Tag>
             )}
+            <Button danger type="dashed" onClick={generateIncidentLog}>
+              Generate Incident Log
+            </Button>
           </Space>
         }
         styles={{ body: { padding: 16 } }}

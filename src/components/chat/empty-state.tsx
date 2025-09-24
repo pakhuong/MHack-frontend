@@ -33,11 +33,11 @@ interface EmptyStateProps {
 export const EmptyState = ({ onSuggestionClick, onSend }: EmptyStateProps) => {
   const [inputValue, setInputValue] = useState('');
 
-  const handleSend = () => {
+  const handleSend = async () => {
     if (!inputValue.trim()) return;
 
     if (onSend) {
-      onSend(inputValue.trim());
+      await onSend(inputValue.trim());
     } else {
       onSuggestionClick(inputValue.trim());
     }
@@ -59,7 +59,7 @@ export const EmptyState = ({ onSuggestionClick, onSend }: EmptyStateProps) => {
   };
 
   return (
-    <div className="flex flex-col items-center justify-center h-full p-4 bg-black">
+    <div className="flex flex-col items-center mt-28 h-full p-4 bg-black">
       {/* Header */}
       <div className="text-center mb-6">
         <div className="mb-3">
@@ -75,7 +75,32 @@ export const EmptyState = ({ onSuggestionClick, onSend }: EmptyStateProps) => {
         </p>
       </div>
 
-      {/* Suggestions Grid - Single Row */}
+      {/* Input Section */}
+      <div className="flex-shrink-0 p-4 w-full">
+        <div className="relative flex flex-row gap-2 items-center border border-zinc-800 rounded-lg p-2 shadow-sm bg-black">
+          <Input.TextArea
+            value={inputValue}
+            onChange={(e) => setInputValue(e.target.value)}
+            placeholder="Ask anything..."
+            autoSize={{ minRows: 1, maxRows: 4 }}
+            onPressEnter={(e) => {
+              if (!e.shiftKey) {
+                e.preventDefault();
+                handleSend();
+              }
+            }}
+            className="pr-24 resize-none rounded-lg !border-none !shadow-unset !focus:shadow-unset !focus:border-none !focus:ring-0 bg-black text-white"
+          />
+          <Button
+            type="text"
+            icon={<Send />}
+            onClick={handleSend}
+            disabled={!inputValue.trim()}
+            className="text-zinc-400 hover:text-white"
+          />
+        </div>
+      </div>
+
       <div className="w-full max-w-4xl mb-4">
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
           {suggestions.map((suggestion, index) => {
@@ -109,43 +134,6 @@ export const EmptyState = ({ onSuggestionClick, onSend }: EmptyStateProps) => {
               </div>
             );
           })}
-        </div>
-
-        {/* Bottom CTA */}
-        <div className="text-center mt-3">
-          <p className="text-gray-500 text-xs mb-1">
-            Or type your own question below
-          </p>
-          <div className="flex items-center justify-center space-x-2 text-gray-600">
-            <div className="w-1 h-1 bg-blue-500 rounded-full animate-pulse" />
-            <span className="text-xs">AI-powered analysis</span>
-          </div>
-        </div>
-      </div>
-
-      {/* Input Section */}
-      <div className="flex-shrink-0 p-4 w-full">
-        <div className="relative flex flex-row gap-2 items-center border border-zinc-800 rounded-lg p-2 shadow-sm bg-black">
-          <Input.TextArea
-            value={inputValue}
-            onChange={(e) => setInputValue(e.target.value)}
-            placeholder="Ask anything..."
-            autoSize={{ minRows: 1, maxRows: 4 }}
-            onPressEnter={(e) => {
-              if (!e.shiftKey) {
-                e.preventDefault();
-                handleSend();
-              }
-            }}
-            className="pr-24 resize-none rounded-lg !border-none !shadow-unset !focus:shadow-unset !focus:border-none !focus:ring-0 bg-black text-white"
-          />
-          <Button
-            type="text"
-            icon={<Send />}
-            onClick={handleSend}
-            disabled={!inputValue.trim()}
-            className="text-zinc-400 hover:text-white"
-          />
         </div>
       </div>
     </div>

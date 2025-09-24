@@ -64,7 +64,12 @@ const ChatPage = () => {
     useState<Conversation | null>(null);
   const [inputValue, setInputValue] = useState('');
   const [isLoading, setIsLoading] = useState(false);
-  const [reports, setReports] = useState<AlertIncident[]>([]);
+  const [reports, setReports] = useState<
+    {
+      messageId: string;
+      report: AlertIncident;
+    }[]
+  >([]);
   const [threads, setThreads] = useState<Thread[]>([]);
   const [selectedThread, setSelectedThread] = useState<Thread | null>(null);
   const [showSidebar] = useState(true);
@@ -74,7 +79,7 @@ const ChatPage = () => {
   const [streamingText, setStreamingText] = useState('');
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const streamingIntervalRef = useRef<NodeJS.Timeout | null>(null);
-
+  console.log({ reports });
   React.useEffect(() => {
     const fetchThreads = async () => {
       try {
@@ -211,49 +216,30 @@ const ChatPage = () => {
     setStreamingText('');
 
     let currentIndex = 0;
-    const streamingSpeed = 30; // milliseconds between characters
+    const step = 5; // mỗi lần thêm 5 ký tự
+    const streamingSpeed = 20; // ms
 
     streamingIntervalRef.current = setInterval(() => {
       if (currentIndex < fullText.length) {
-        const currentText = fullText.substring(0, currentIndex + 1);
-        console.log(
-          'Streaming progress:',
-          currentIndex,
-          '/',
-          fullText.length,
-          ':',
-          currentText.slice(-5)
-        );
-        setStreamingText(currentText);
-        currentIndex++;
+        const nextIndex = Math.min(currentIndex + step, fullText.length);
+        setStreamingText(fullText.substring(0, nextIndex));
+        currentIndex = nextIndex;
       } else {
-        // Streaming complete
-        console.log('Streaming completed for:', messageId);
         clearInterval(streamingIntervalRef.current!);
 
-        // Update the actual message content first
+        // Update toàn bộ message cuối cùng
         setCurrentConversation((prev) => {
           if (!prev) return prev;
           const updatedMessages = prev.messages.map((msg) =>
             msg.id === messageId ? { ...msg, content: fullText } : msg
           );
-          const updatedConversation = {
+          return {
             ...prev,
             messages: updatedMessages,
             updatedAt: new Date().toISOString(),
           };
-
-          // Update conversations array immediately
-          setConversations((prevConvs) =>
-            prevConvs.map((conv) =>
-              conv.id === updatedConversation.id ? updatedConversation : conv
-            )
-          );
-
-          return updatedConversation;
         });
 
-        // Clear streaming state only after ensuring message is updated
         setStreamingMessageId(null);
         setStreamingText('');
       }
@@ -265,47 +251,65 @@ const ChatPage = () => {
     navigate(`/chat/thread/${thread.threadId}`);
   };
 
-  const handleSend = async () => {
-    if (!inputValue.trim() || isLoading) return;
+  const handleSend = async (text?: string) => {
+    if (!(text ?? inputValue).trim() || isLoading) return;
 
-    // Clear input and set loading
-    const userInput = inputValue.trim();
+    const userInput = (text ?? inputValue).trim();
     setInputValue('');
     setIsLoading(true);
 
+    // Thêm human message ngay lập tức vào conversation
+    const userMessage: MessageType = {
+      id: `user-${Date.now()}`,
+      role: 'user',
+      content: userInput,
+      timestamp: new Date().toISOString(),
+    };
+
+    if (currentConversation) {
+      setCurrentConversation((prev) =>
+        prev
+          ? {
+              ...prev,
+              messages: [...prev.messages, userMessage],
+              updatedAt: new Date().toISOString(),
+            }
+          : prev
+      );
+    } else {
+      const newConversation: Conversation = {
+        id: Date.now().toString(),
+        title: userInput.slice(0, 30) + (userInput.length > 30 ? '...' : ''),
+        messages: [userMessage],
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString(),
+      };
+      setConversations([newConversation, ...conversations]);
+      setCurrentConversation(newConversation);
+    }
+
     try {
-      // Call API to send message
       const response = await axios.post(
         'http://localhost:3000/chat/sendMessage',
         {
           query: userInput,
-          threadId: threadId || undefined, // Include threadId if in a thread
+          threadId: threadId || undefined,
         }
       );
 
       const { threadId: responseThreadId, reply, report } = response.data;
 
-      // If we're not in a thread yet (first message), navigate to the new thread
       if (!threadId && responseThreadId) {
         navigate(`/chat/thread/${responseThreadId}`);
-        return; // The useEffect will handle loading the conversation
+        return;
       }
 
-      // If we're already in a thread, add the messages to current conversation
       if (currentConversation) {
-        // Add user message
-        const userMessage: MessageType = {
-          id: `user-${Date.now()}`,
-          role: 'user',
-          content: userInput,
-          timestamp: new Date().toISOString(),
-        };
-
         const formattedReport = report
           ? 'incident_id' in report
             ? {
                 _id: report.incident_id,
-                id: report.incident_id,
+                id: report.id,
                 tag: 'incident',
                 service: report.service || 'detected-service',
                 time: report.start_time,
@@ -316,7 +320,7 @@ const ChatPage = () => {
             : 'alert_id' in report
               ? {
                   _id: report.alert_id,
-                  id: report.alert_id,
+                  id: report.id,
                   tag: 'alert',
                   service: report.service || 'detected-service',
                   time: report.time,
@@ -327,7 +331,6 @@ const ChatPage = () => {
               : undefined
           : undefined;
 
-        // Create bot response
         const botResponse: MessageType = {
           id: `bot-${Date.now()}`,
           role: 'assistant',
@@ -336,35 +339,35 @@ const ChatPage = () => {
           report: formattedReport as AlertIncident,
         };
 
-        // Update conversation with both messages
-        const updatedConversation = {
-          ...currentConversation,
-          messages: [...currentConversation.messages, userMessage, botResponse],
-          updatedAt: new Date().toISOString(),
-        };
+        setCurrentConversation((prev) =>
+          prev
+            ? {
+                ...prev,
+                messages: [...prev.messages, botResponse],
+                updatedAt: new Date().toISOString(),
+              }
+            : prev
+        );
 
-        setCurrentConversation(updatedConversation);
-
-        // Add report to reports list if present
         if (formattedReport) {
           setReports((prevReports) => [
-            formattedReport as AlertIncident,
             ...prevReports,
+            {
+              messageId: botResponse.id,
+              report: formattedReport as AlertIncident,
+            },
           ]);
         }
 
-        // Start streaming the response
         setTimeout(() => {
-          setIsLoading(false);
           startStreaming(reply, botResponse.id);
         }, 500);
       }
     } catch (error) {
       console.error('Failed to send message:', error);
-      setIsLoading(false);
-
-      // Fallback to local handling if API fails
       handleSendFallback(userInput);
+    } finally {
+      setIsLoading(false);
     }
   };
 
@@ -438,12 +441,10 @@ const ChatPage = () => {
     setInputValue(text);
   };
 
-  const handleEmptyStateSend = (text: string) => {
+  const handleEmptyStateSend = async (text: string) => {
     setInputValue(text);
     // Trigger send immediately
-    setTimeout(() => {
-      handleSend();
-    }, 100);
+    await handleSend(text);
   };
 
   const handleEditMessage = (messageId: string) => {
@@ -557,8 +558,10 @@ const ChatPage = () => {
         />
       ) : (
         <>
-          <div className="overflow-y-auto flex flex-col gap-4 p-4">
-            <div className="mb-4 pb-4 border-b border-zinc-800">
+          {/* Messages list chiếm hết chiều cao còn lại */}
+          <div className="flex-1 overflow-y-auto flex flex-col gap-4 p-4">
+            {/* Header - static on top */}
+            <div className="sticky top-0 z-10 bg-black border-b border-zinc-800 px-4 py-3">
               <div className="flex items-center justify-between">
                 <div>
                   <h2 className="text-xl font-semibold text-white">
@@ -567,11 +570,6 @@ const ChatPage = () => {
                   {selectedThread && (
                     <p className="text-gray-400 text-sm mt-1">
                       Thread: {selectedThread.threadId}
-                    </p>
-                  )}
-                  {threadId && (
-                    <p className="text-blue-400 text-xs mt-1 font-mono">
-                      Thread ID: {threadId}
                     </p>
                   )}
                 </div>
@@ -588,50 +586,41 @@ const ChatPage = () => {
               </div>
             </div>
 
+            {/* render messages */}
             {currentConversation?.messages.map((message) => {
-              // Check if this message is currently streaming
               const isStreaming = streamingMessageId === message.id;
               const displayMessage = isStreaming
                 ? { ...message, content: streamingText }
                 : message;
-
-              if (message.role === 'assistant') {
-                console.log('Rendering assistant message:', {
-                  messageId: message.id,
-                  isStreaming,
-                  streamingMessageId,
-                  originalContent: message.content,
-                  streamingText: streamingText.slice(0, 20) + '...',
-                  displayContent: displayMessage.content.slice(0, 20) + '...',
-                });
-              }
-
               return (
-                <Message
-                  key={message.id}
-                  message={displayMessage}
-                  isStreaming={isStreaming}
-                  onEdit={handleEditMessage}
-                  onRegenerate={
-                    message.role === 'assistant' &&
-                    message.id ===
-                      currentConversation.messages[
-                        currentConversation.messages.length - 1
-                      ].id &&
-                    !isStreaming
-                      ? handleRegenerate
-                      : undefined
-                  }
-                />
+                <div key={message.id} className="space-y-2">
+                  <Message
+                    key={message.id}
+                    message={displayMessage}
+                    isStreaming={isStreaming}
+                    report={
+                      reports.find(r=>r.messageId===message.id)?.report
+                    }
+                    onEdit={handleEditMessage}
+                    onRegenerate={
+                      message.role === 'assistant' &&
+                      message.id ===
+                        currentConversation.messages[
+                          currentConversation.messages.length - 1
+                        ].id &&
+                      !isStreaming
+                        ? handleRegenerate
+                        : undefined
+                    }
+                  />
+                </div>
               );
             })}
-            {isLoading && (
-              <div className="flex justify-center py-4">
-                <Spin indicator={<LoaderIcon style={{ fontSize: 24 }} />} />
-              </div>
-            )}
+
             <div ref={messagesEndRef} />
           </div>
+
+          {/* Chat input luôn nằm cuối */}
           <div className="flex-shrink-0 p-4 bg-black border-t border-zinc-800">
             <div className="relative flex flex-row gap-2 items-center border border-zinc-800 rounded-lg p-2 shadow-sm bg-black">
               <Input.TextArea
@@ -649,10 +638,11 @@ const ChatPage = () => {
               />
               <Button
                 type="text"
-                icon={<Send />}
-                onClick={handleSend}
+                loading={isLoading} // 🔥 Loading ngay tại nút
                 disabled={!inputValue.trim() || isLoading}
-                className="text-zinc-400 hover:text-white"
+                icon={<Send />}
+                onClick={() => handleSend()}
+                className="text-zinc-400 hover:text-white [&_.ant-btn-loading-icon]:text-white"
               />
             </div>
           </div>
@@ -769,7 +759,7 @@ const ChatPage = () => {
           </div>
         ) : (
           <div className="p-3 space-y-2 flex flex-col gap-2 items-stretch">
-            {reports.map((report) => (
+            {reports.map(({ report }) => (
               <Card
                 key={report.id}
                 className="bg-zinc-800 border-zinc-700 hover:border-zinc-600 cursor-pointer transition-all"
@@ -859,11 +849,13 @@ const ChatPage = () => {
   );
 
   return (
-    <Layout className="bg-black h-screen overflow-hidden">
-      <Content className="bg-black h-full">
+    <Layout className="bg-black max-h-[87vh] overflow-hidden">
+      <Content className="bg-black h-full overflow-hidden">
         <div className="flex h-full">
           {/* Main Chat Area */}
-          <div className="flex-1 flex flex-col h-full">{renderMainChat()}</div>
+          <div className="flex-1 flex flex-col h-[90vh]">
+            {renderMainChat()}
+          </div>
 
           {/* Sidebar */}
           {showSidebar && (

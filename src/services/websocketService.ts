@@ -112,6 +112,14 @@ class WebSocketService {
     }
   }
 
+  sendLogList(logs: SimpleLogEntry[]) {
+    if (this.socket?.connected) {
+      this.socket.emit('sendLog', logs);
+    } else {
+      console.warn('Cannot send logs: WebSocket not connected');
+    }
+  }
+
   sendMetric(metric: Record<string, unknown>) {
     if (this.socket?.connected) {
       this.socket.emit('sendMetric', metric);

@@ -10,12 +10,14 @@ import {
 } from '@ant-design/icons';
 import { useNavigate } from 'react-router-dom';
 import { AlertTriangle, Clock, User } from 'lucide-react';
+import type { AlertIncident } from '@/types/ticket';
 
 interface MessageProps {
   message: MessageType;
   onEdit?: (messageId: string) => void;
   onRegenerate?: () => void;
   isStreaming?: boolean;
+  report?: AlertIncident;
 }
 
 export const Message = ({
@@ -23,10 +25,11 @@ export const Message = ({
   onEdit,
   onRegenerate,
   isStreaming,
+  report,
 }: MessageProps) => {
   const isUser = message.role === 'user';
   const navigate = useNavigate();
-
+  console.log({ message });
   const handleCopy = async () => {
     try {
       await navigator.clipboard.writeText(message.content);
@@ -46,6 +49,18 @@ export const Message = ({
         return '#ffa940';
       case 'low':
         return '#52c41a';
+      default:
+        return '#d9d9d9';
+    }
+  };
+
+  const getTypeColor = (severity: string) => {
+    switch (severity.toLowerCase()) {
+      case 'incident':
+        return '#ff4d4f';
+      case 'alert':
+        return 'yellow';
+
       default:
         return '#d9d9d9';
     }
@@ -90,59 +105,46 @@ export const Message = ({
         </div>
 
         {/* Incident Object */}
-        {message.incident && (
+        {report && (
           <Card
-            className="bg-zinc-800 border-zinc-700 hover:border-zinc-600 cursor-pointer transition-all"
-            onClick={() => navigate(`/ticket/${message.incident?.incident_id}`)}
+            className="bg-zinc-800 max-w-80 border-zinc-700 hover:border-zinc-600 cursor-pointer transition-all"
+            onClick={() =>
+              window.open(`/alert-incident-management/${'alert_id' in report ? 'alert' : 'incident'}/${report.id}`)
+            }
           >
             <div className="flex items-start justify-between">
               <div className="flex-1">
-                <div className="flex items-center space-x-2 mb-2">
-                  <AlertTriangle
-                    color={getSeverityColor(message.incident.severity)}
-                    size={16}
-                  />
+                <div className="flex items-center space-x-2 mb-3">
+                  <Tag
+                    style={{
+                      borderColor: getTypeColor(report.tag),
+                      color: getTypeColor(report.tag)
+                    }}
+                    className="text-xs"
+                  >
+                    {report.tag.toUpperCase()}
+                  </Tag>
                   <span className="text-blue-400 font-mono text-sm">
-                    {message.incident.incident_id}
+                    {report._id}
                   </span>
-                  <Tag
-                    color={getSeverityColor(message.incident.severity)}
-                    className="text-xs"
-                  >
-                    {message.incident.severity.toUpperCase()}
-                  </Tag>
-                  <Tag
-                    color={getStatusColor(message.incident.status)}
-                    className="text-xs"
-                  >
-                    {message.incident.status}
-                  </Tag>
                 </div>
+                <Tag
+                  color={getSeverityColor(report.severity)}
+                  className="text-xs"
+                >
+                  {report.severity.toUpperCase()}
+                </Tag>
+                <Tag color={getStatusColor(report.status)} className="text-xs">
+                  {report.status}
+                </Tag>
 
-                <h4 className="text-white font-medium mb-2 text-sm">
-                  {message.incident.cause || 'System Incident Detected'}
-                </h4>
+                {/* <h4 className="text-white font-medium mb-2 text-sm">
+                  {report.tag || 'System Incident Detected'}
+                </h4> */}
 
-                <div className="flex items-center space-x-4 text-xs text-gray-400 mb-2">
-                  <div className="flex items-center space-x-1">
-                    <User style={{ fontSize: 10 }} />
-                    <span>
-                      {message.incident.impact.users.toLocaleString()} users
-                    </span>
-                  </div>
-                  <div className="flex items-center space-x-1">
-                    <Clock style={{ fontSize: 10 }} />
-                    <span>
-                      {new Date(
-                        message.incident.start_time
-                      ).toLocaleDateString()}
-                    </span>
-                  </div>
-                </div>
-
-                <div className="flex items-center justify-between">
+                <div className="flex items-center justify-between mt-2">
                   <div className="text-xs text-gray-500">
-                    Service: {message.incident.service}
+                    Service: {report.service}
                   </div>
                   <Button
                     type="link"
